@@ -1,3 +1,5 @@
+<img width="1600" height="400" alt="EBizCharge" src="https://github.com/user-attachments/assets/5b0875e6-5573-41c2-841d-c7f49f4ceb08" />
+
 # eBizCharge Payment for Shopware 6.7
 
 ## Introduction
@@ -101,6 +103,9 @@ After installing the plugin, configure your **eBizCharge** credentials and check
 3. Select the sales channel you want to configure
 4. Save credentials and run the connection test
 
+<img width="1308" height="1296" alt="image" src="https://github.com/user-attachments/assets/65d5126b-8e12-4751-a61d-168fdaaf6b75" />
+
+
 ### Environment And Credentials
 
 Configure the active environment:
@@ -128,6 +133,8 @@ Configure:
 - Connection timeout
 - Retry count
 
+<img width="1308" height="1096" alt="image" src="https://github.com/user-attachments/assets/864f8a5a-4e38-4403-91d0-3c9e36db410b" />
+
 
 ### Webhook Security
 
@@ -136,6 +143,8 @@ Configure:
 - Webhook Basic Auth username
 - Webhook Basic Auth password
 - Webhook signature key
+
+<img width="1308" height="532" alt="image" src="https://github.com/user-attachments/assets/3fe1ba0c-1047-48f0-b513-2664f0dcab09" />
 
 
 ### Connection Test
@@ -169,6 +178,9 @@ The plugin integrates into Shopware checkout through the `eBizCharge Credit Card
 5. Customer is redirected to the hosted eBizCharge payment form.
 6. eBizCharge redirects the customer back to Shopware.
 7. Shopware finalization verifies the payment with provider data before updating the transaction state.
+
+<img width="780" height="1280" alt="image" src="https://github.com/user-attachments/assets/8e17c14f-cfbe-4062-b876-e0c93e167e25" />
+
 
 ### Saved Payment Methods During Checkout
 
@@ -211,6 +223,9 @@ Payment-link return routes:
 ## Saved Cards
 
 Registered customers can manage their saved eBizCharge cards from the account dashboard.
+
+<img width="1630" height="982" alt="image" src="https://github.com/user-attachments/assets/829f4d36-f393-46b4-8bb9-d044d938aea2" />
+
 
 ### Accessing Saved Cards
 
