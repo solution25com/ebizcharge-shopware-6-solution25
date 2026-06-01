@@ -1,0 +1,147 @@
+# Changelog
+
+## [0.0.7] - 2026-06-01
+
+### Added
+
+- Added Pay by Link support with automatic email generation, admin resend action, storefront return pages, persistence, and mail-template setup.
+- Added saved-card account management for registered customers, including hosted add-card flow, delete/default actions, and account-area views.
+- Added webhook handling with Basic Auth and HMAC signature validation for captured, voided, and refunded events.
+- Added provider-side capture, void, and refund synchronization when Shopware transaction states enter `paid`, `cancelled`, or `refunded`.
+
+### Changed
+
+- Credit-card checkout can show saved payment methods for registered customers while raw card entry remains hosted by eBizCharge.
+- Transaction records now include provider payment type, provider payment method, support message, and last-sync timestamp fields.
+- Plugin configuration now includes webhook security credentials and AVS enforcement.
+
+### Fixed
+
+- Added Shopware login required defaults to custom account routes.
+
+## [0.0.6] - 2026-04-13
+
+### Added
+
+- Shopware validator metadata in `composer.json`: `authors`, localized descriptions, localized manufacturer links, localized support links, and explicit `plugin-icon` registration.
+- A neutral Shopware extension icon at `src/Resources/config/plugin.png`.
+- Self-test coverage for password-only fingerprint invalidation, unauthorized-like provider statuses, illegal transition handling, unexpected transition exception bubbling, and atomic transaction-record upserts.
+- PHPUnit coverage for password-sensitive credential fingerprints and the safer approved-vs-unauthorized status normalization rules.
+
+### Changed
+
+- Narrowed `CreditCardPaymentHandler::validate()` to return `Struct` and `pay()` to return `RedirectResponse`, matching the actual Shopware 6.7 behavior without widening the payment scope.
+- Cleaned `OrderTransactionLoader` to align with Shopware 6.7 entity typing while preserving the current authority model: order-transaction amount remains authoritative and order total remains descriptive only.
+- `TransactionStateSyncService` now persists the actual current Shopware state after illegal transitions instead of silently writing the rejected target state.
+- `DbalTransactionRecordStore::upsert()` now uses one atomic `INSERT ... ON DUPLICATE KEY UPDATE` path instead of a read-then-write sequence.
+
+### Fixed
+
+- `ResponseNormalizer::resolveProviderOutcome()` no longer misclassifies `unauthorized` or similar statuses as approved through a broad `auth` substring match.
+- `PluginConfig::credentialFingerprint()` now includes the password, so password-only credential rotations invalidate prior successful connection tests.
+- `TransactionStateSyncService::currentState()` now type-narrows the repository result before reading `getStateMachineState()`, matching the PHPStan expectation for Shopware 6.7 entities.
+- Packaging and release smoke validation now require the plugin icon and compare it between source and the packaged ZIP artifact.
+
+### Validation
+
+- `/opt/homebrew/bin/php -l` across `src`, `tests`, and `tools`
+- `/opt/homebrew/bin/php tools/guardrail-check.php`
+- `/opt/homebrew/bin/php tools/service-graph-check.php`
+- `/opt/homebrew/bin/php tools/self-test.php`
+- `xmllint --noout` for `config.xml` and the segmented service XML files
+- `./tools/package-release.sh`
+- `/opt/homebrew/bin/php tools/release-smoke.php`
+- `./tools/validate-all.sh`
+
+## [0.0.5] - 2026-04-13
+
+### Changed
+
+- Hardened the minimal Shopware 6.7 runtime from `0.0.4` without widening scope beyond the hosted REST card flow.
+- Made the Shopware order-transaction amount the single authoritative amount through checkout bootstrap, stored metadata, and provider verification.
+- Disabled `afterOrderEnabled` on the payment method and added plugin `update()` handling so upgrades rewrite the existing method to the safer default.
+
+### Fixed
+
+- `ResponseNormalizer::connectionTestSucceeded()` no longer accepts arbitrary non-empty JSON; it now requires the expected `GetMerchantIntegrationSettings` response envelope and result payload.
+- `FinalizationService` no longer treats browser-reported `declined` or `cancelled` outcomes as authoritative. All outcomes now attempt provider verification first.
+- Provider verification now rejects amount mismatches against the Shopware order transaction instead of allowing fallback comparison against the full order total.
+- `CreditCardPaymentHandler::pay()` now validates only the authoritative transaction amount, not the descriptive order total.
+
+### Added
+
+- Self-tests for provider-verified cancel, browser-decline without verification, unexpected connection-test payloads, amount-mismatch rejection, and disabled after-order installation/update behavior.
+- PHPUnit coverage for the payment-method installer update path and the stricter connection-test response handling.
+
+### Validation
+
+- `/opt/homebrew/bin/php -l` across `src`, `tests`, and `tools`
+- `/opt/homebrew/bin/php tools/guardrail-check.php`
+- `/opt/homebrew/bin/php tools/service-graph-check.php`
+- `/opt/homebrew/bin/php tools/self-test.php`
+- `xmllint --noout` for `config.xml` and the segmented service XML files
+- `./tools/package-release.sh`
+- `/opt/homebrew/bin/php tools/release-smoke.php`
+
+## [0.0.4] - 2026-04-13
+
+### Changed
+
+- Reduced the runtime surface to the minimal install-safe Shopware 6.7 core: payment method installer, connection diagnostics, hosted redirect checkout, server-side finalize verification, transaction-state sync, and one transaction metadata store.
+- Replaced prototype-style or assumption-based service assembly with explicit XML wiring for runtime services, controllers, commands, and provider/store aliases.
+- Removed the plugin-specific monolog channel contract and reverted runtime logging to the default Shopware logger service.
+- Removed the order-summary admin extension and the separate audit store from the release slice.
+- Advanced the plugin version to `0.0.4`.
+
+### Fixed
+
+- `CreditCardPaymentHandler` and related services no longer depend on `monolog.logger.ebizcharge_payment`, which was not guaranteed to exist on a clean Shopware CE install.
+- `ProviderClientInterface`, `ProviderTransportInterface`, and `TransactionRecordStoreInterface` now have explicit aliases in the runtime service graph.
+- Controller wiring no longer depends on `service_container` or `setContainer`.
+- Migration scope is reduced to the transaction metadata table only; the unused audit table is gone.
+- Validation no longer checks for the old broken architecture and now fails on hidden package config, unresolved service ids, stale order-summary surfaces, and logger-channel assumptions.
+
+### Added
+
+- `tools/service-graph-check.php` to parse the plugin XML import chain, resolve aliases, reflect constructor dependencies, and fail on unresolved runtime references.
+- `tools/release-smoke.php` to unpack the release archive and rerun the same graph validation against the packaged artifact.
+- Plain-PHP self-tests covering payment-method installation payloads, connection-test gating, hosted redirect creation, verified finalize flow, and command/controller instantiation.
+
+### Validation
+
+- `/opt/homebrew/bin/php -l` across `src`, `tests`, and `tools`
+- `/opt/homebrew/bin/php tools/guardrail-check.php`
+- `/opt/homebrew/bin/php tools/service-graph-check.php`
+- `/opt/homebrew/bin/php tools/self-test.php`
+- `xmllint --noout` for `config.xml` and the segmented service XML files
+- `./tools/package-release.sh`
+- `/opt/homebrew/bin/php tools/release-smoke.php`
+
+## [0.0.3] - 2026-04-11
+
+### Fixed
+
+- Replaced the invalid Symfony XML service discovery entry in `src/Resources/config/services/core.xml` with valid XML so Shopware could parse the plugin container during install.
+- Kept controller classes out of the runtime service import path so explicit controller registrations remained authoritative.
+
+### Changed
+
+- Plugin version advanced to `0.0.3`.
+- Release tooling began deriving the archive version from `composer.json`.
+
+## [0.0.2] - 2026-04-11
+
+### Fixed
+
+- Plugin lifecycle stopped requiring the installer service to exist during `install()`.
+- The plugin added a repository-backed fallback installer path in the lifecycle entry point.
+
+## [0.0.1] - 2026-04-11
+
+### Added
+
+- Initial Shopware `6.7.x`-only plugin metadata and REST-only eBizCharge integration boundaries.
+- Hosted redirect checkout through `GetEbizWebFormURL`.
+- Server-side finalize verification using `GetTransactionDetails` and `SearchEbizWebFormReceivedPayments`.
+- Support-safe admin connection test route and CLI command.
+- Packaging and validation scripts for release ZIP production.

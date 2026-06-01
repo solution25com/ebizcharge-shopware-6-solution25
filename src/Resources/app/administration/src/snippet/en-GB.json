@@ -1,0 +1,15 @@
+{
+  "ebizcharge": {
+    "connectionTest": {
+      "button": "Test eBizCharge connection"
+    },
+    "payByLink": {
+      "cardTitle": "eBizCharge Details",
+      "resendTitle": "Re-send Payment Link",
+      "sendButton": "Send Email",
+      "transactionIdLabel": "eBizCharge Transaction ID",
+      "successMessage": "Payment link sent successfully.",
+      "errorMessage": "Failed to send payment link."
+    }
+  }
+}

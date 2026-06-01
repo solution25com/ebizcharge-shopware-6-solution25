@@ -1,0 +1,164 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="false" autoconfigure="false" public="false"/>
+
+        <service id="EbizChargeShopware\Installer\PaymentMethodInstaller" public="true">
+            <argument type="service" id="payment_method.repository"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Configuration\PluginConfigProvider">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <service id="EbizChargeShopware\Provider\Request\ReturnUrlBuilder"/>
+        <service id="EbizChargeShopware\Provider\Request\SecurityTokenPayloadFactory"/>
+        <service id="EbizChargeShopware\Provider\Request\GetEbizWebFormUrlRequestBuilder"/>
+        <service id="EbizChargeShopware\Provider\Request\GetTransactionDetailsRequestBuilder"/>
+        <service id="EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder"/>
+        <service id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+
+        <service id="EbizChargeShopware\Core\Content\EbizchargeVaultedCustomer\EbizchargeVaultedCustomerDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="EbizChargeShopware\Core\Content\EbizchargePaymentTransaction\EbizchargePaymentTransactionDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="EbizChargeShopware\Core\Content\EbizchargePaymentLink\EbizchargePaymentLinkDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\EbizChargeCustomerVaultService">
+            <argument type="service" id="ebizcharge_vaulted_customer.repository"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+        </service>
+
+        <service id="EbizChargeShopware\Provider\Client\SymfonyHttpProviderTransport">
+            <argument type="service" id="http_client"/>
+        </service>
+        <service id="EbizChargeShopware\Provider\Client\ProviderTransportInterface" alias="EbizChargeShopware\Provider\Client\SymfonyHttpProviderTransport"/>
+        <service id="EbizChargeShopware\Provider\Client\RestProviderClient">
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderTransportInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\SecurityTokenPayloadFactory"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+        <service id="EbizChargeShopware\Provider\Client\ProviderClientInterface" alias="EbizChargeShopware\Provider\Client\RestProviderClient"/>
+
+        <service id="EbizChargeShopware\Storage\Dal\DalTransactionRecordStore">
+            <argument type="service" id="ebizcharge_payment_transaction.repository"/>
+        </service>
+        <service id="EbizChargeShopware\Storage\TransactionRecordStoreInterface" alias="EbizChargeShopware\Storage\Dal\DalTransactionRecordStore"/>
+
+        <service id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader">
+            <argument type="service" id="order_transaction.repository"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Checkout\HostedCheckoutService">
+            <argument type="service" id="EbizChargeShopware\Provider\Request\GetEbizWebFormUrlRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Finalize\BrowserReturnParser"/>
+        <service id="EbizChargeShopware\Service\Finalize\FinalizationService">
+            <argument type="service" id="EbizChargeShopware\Service\Finalize\BrowserReturnParser"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\GetTransactionDetailsRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware\Service\StateSync\TransactionStateSyncService"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\StateSync\TransactionStateResolver"/>
+        <service id="EbizChargeShopware\Service\StateSync\StateTransitionPolicy"/>
+        <service id="EbizChargeShopware\Service\StateSync\TransactionStateSyncService">
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="EbizChargeShopware\Service\StateSync\TransactionStateResolver"/>
+            <argument type="service" id="EbizChargeShopware\Service\StateSync\StateTransitionPolicy"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\EbizChargeApiClient">
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
+        <service id="EbizChargeShopware\Subscriber\OrderTransactionStateSubscriber">
+            <argument type="service" id="EbizChargeShopware\Service\EbizChargeApiClient"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Connection\ConnectionTestService">
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
+        <service id="EbizChargeShopware\Checkout\Payment\Handler\CreditCardPaymentHandler">
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\HostedCheckoutService"/>
+            <argument type="service" id="EbizChargeShopware\Service\Finalize\FinalizationService"/>
+            <argument type="service" id="EbizChargeShopware\Service\StateSync\TransactionStateSyncService"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+            <tag name="shopware.payment.method"/>
+        </service>
+
+        <service id="EbizChargeShopware\Checkout\Payment\Handler\PayByLinkPaymentHandler">
+            <tag name="shopware.payment.method"/>
+        </service>
+
+        <service id="EbizChargeShopware\Subscriber\StorefrontPaymentMethodSubscriber">
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\PaymentLinkService">
+            <argument type="service" id="ebizcharge_payment_link.repository"/>
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\HostedCheckoutService"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="Shopware\Core\Content\Mail\Service\MailService"/>
+            <argument type="service" id="mail_template.repository"/>
+            <argument type="service" id="request_stack"/>
+        </service>
+
+        <service id="EbizChargeShopware\Subscriber\OrderPaymentLinkSubscriber">
+            <argument type="service" id="EbizChargeShopware\Service\PaymentLinkService"/>
+            <argument type="service" id="logger"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="EbizChargeShopware.logger" class="Monolog\Logger">
+            <argument type="string">EbizCharge</argument>
+            <argument type="collection">
+                <argument type="service" id="EbizChargeShopware.rotatingHandler"/>
+            </argument>
+        </service>
+
+        <service id="EbizChargeShopware.rotatingHandler" class="Monolog\Handler\RotatingFileHandler">
+            <argument type="string">%kernel.logs_dir%/EbizChargeShopware-%kernel.environment%.log</argument>
+        </service>
+    </services>
+</container>

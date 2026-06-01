@@ -1,0 +1,36 @@
+{
+  "ebizcharge": {
+    "shopper": {
+      "declined": "Die Zahlung wurde abgelehnt. Bitte versuchen Sie eine andere Karte oder kontaktieren Sie Ihren Anbieter.",
+      "cancelled": "Die Zahlung wurde vor dem Abschluss abgebrochen.",
+      "technical": "Das Zahlungsergebnis konnte noch nicht vollstandig verifiziert werden. Bitte prufen Sie Ihre Bestellhistorie oder kontaktieren Sie den Support."
+    },
+    "admin": {
+      "connectionSuccess": "Verbindungstest erfolgreich.",
+      "connectionFailure": "Verbindungstest fehlgeschlagen."
+    },
+    "account": {
+      "menuTitle": "eBizCharge gespeicherte Karten",
+      "title": "eBizCharge gespeicherte Karten",
+      "intro": "Verwalten Sie bei eBizCharge gespeicherte Karten.",
+      "addCard": "Karte hinzufugen",
+      "refreshCards": "Karten aktualisieren",
+      "empty": "Sie haben noch keine gespeicherten Karten.",
+      "expires": "Gultig bis",
+      "defaultBadge": "Standard",
+      "setDefault": "Als Standard setzen",
+      "delete": "Entfernen",
+      "deleteConfirm": "Diese gespeicherte Karte entfernen?",
+      "deleteMissing": "Keine Karte zum Entfernen ausgewahlt.",
+      "deleteSuccess": "Die gespeicherte Karte wurde entfernt.",
+      "deleteFailed": "Die Karte konnte nicht entfernt werden. Bitte erneut versuchen.",
+      "defaultMissing": "Keine Karte ausgewahlt.",
+      "defaultSuccess": "Standardkarte aktualisiert.",
+      "defaultFailed": "Standardkarte konnte nicht aktualisiert werden.",
+      "addSuccess": "Ihre Karte wurde erfolgreich gespeichert.",
+      "addIncomplete": "Die neue Karte konnte noch nicht bestatigt werden. Bei Abbruch wurden keine Anderungen vorgenommen.",
+      "addSessionInvalid": "Die Ruckkehr vom Kartenformular konnte nicht verifiziert werden. Bitte erneut versuchen.",
+      "addStartFailed": "Das Kartenformular konnte nicht geoffnet werden. Bitte erneut versuchen."
+    }
+  }
+}

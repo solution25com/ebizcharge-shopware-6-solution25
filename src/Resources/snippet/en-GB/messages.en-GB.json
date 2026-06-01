@@ -1,0 +1,36 @@
+{
+  "ebizcharge": {
+    "shopper": {
+      "declined": "The payment was declined. Please try another card or contact your provider.",
+      "cancelled": "The payment was cancelled before completion.",
+      "technical": "The payment result could not be fully verified yet. Please check your order history or contact support."
+    },
+    "admin": {
+      "connectionSuccess": "Connection test passed.",
+      "connectionFailure": "Connection test failed."
+    },
+    "account": {
+      "menuTitle": "eBizCharge Saved Cards",
+      "title": "eBizCharge Saved Cards",
+      "intro": "Manage cards stored securely with eBizCharge.",
+      "addCard": "Add Card",
+      "refreshCards": "Refresh cards",
+      "empty": "You have no saved cards yet.",
+      "expires": "Expires",
+      "defaultBadge": "Default",
+      "setDefault": "Set as default",
+      "delete": "Remove",
+      "deleteConfirm": "Remove this saved card?",
+      "deleteMissing": "No card was selected to remove.",
+      "deleteSuccess": "The saved card was removed.",
+      "deleteFailed": "The card could not be removed. Please try again.",
+      "defaultMissing": "No card was selected.",
+      "defaultSuccess": "Default card updated.",
+      "defaultFailed": "Could not update the default card.",
+      "addSuccess": "Your card was saved successfully.",
+      "addIncomplete": "We could not confirm the new card yet. If you cancelled, no changes were made.",
+      "addSessionInvalid": "The add-card return could not be verified. Please try again.",
+      "addStartFailed": "The card form could not be opened. Please try again."
+    }
+  }
+}

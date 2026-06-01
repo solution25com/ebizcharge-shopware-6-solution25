@@ -1,0 +1,52 @@
+{
+    "name": "ebizcharge/shopware67-payment-plugin",
+    "description": "eBizCharge payment plugin for Shopware 6.7 using the REST hosted webform flow.",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "version": "0.0.6",
+    "authors": [
+        {
+            "name": "solution25",
+            "homepage": "https://solution25.com/en/"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "shopware/core": ">=6.7.0.0 <6.8.0.0",
+        "shopware/storefront": ">=6.7.0.0 <6.8.0.0",
+        "shopware/administration": ">=6.7.0.0 <6.8.0.0"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "EbizChargeShopware\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EbizChargeShopware\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "EbizChargeShopware\\EbizChargeShopware",
+        "plugin-icon": "src/Resources/config/plugin.png",
+        "label": {
+            "en-GB": "eBizCharge for Shopware 6.7",
+            "de-DE": "eBizCharge fuer Shopware 6.7"
+        },
+        "description": {
+            "en-GB": "REST-only eBizCharge payment plugin for Shopware 6.7 with hosted card checkout, admin connection diagnostics, and provider-verified finalize handling without raw card data.",
+            "de-DE": "REST-only eBizCharge Zahlungsplugin fuer Shopware 6.7 mit gehostetem Karten-Checkout, Admin-Verbindungsdiagnose und verifiziertem Finalize ohne Rohkartendaten im Shop."
+        },
+        "manufacturerLink": {
+            "en-GB": "https://solution25.com/en/",
+            "de-DE": "https://solution25.com/en/"
+        },
+        "supportLink": {
+            "en-GB": "https://solution25.com/en/contact/",
+            "de-DE": "https://solution25.com/en/contact/"
+        }
+    }
+}

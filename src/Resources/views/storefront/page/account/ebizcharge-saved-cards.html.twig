@@ -1,0 +1,73 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    <div class="account-ebizcharge-saved-cards"
+         {% if addCardUrl %}
+             data-ebiz-charge-saved-cards-plugin
+             data-ebiz-charge-saved-cards-plugin-options="{{ {
+                 reloadUrl: path('frontend.account.ebizcharge.saved-cards.index')
+             }|json_encode|e('html_attr') }}"
+         {% endif %}
+    >
+        <h1 class="account-ebizcharge-saved-cards__title">{{ 'ebizcharge.account.title'|trans }}</h1>
+        <p class="text-muted">{{ 'ebizcharge.account.intro'|trans }}</p>
+
+        <div class="mb-4 d-flex gap-2 flex-wrap">
+            <a href="{{ path('frontend.account.ebizcharge.saved-cards.index', { addCard: '1' }) }}" class="btn btn-primary">
+                {{ 'ebizcharge.account.addCard'|trans }}
+            </a>
+        </div>
+
+        {% if addCardUrl %}
+            <div class="ebiz-add-card-frame-wrap mb-4">
+                <iframe
+                    class="ebiz-add-card-frame"
+                    src="{{ addCardUrl }}"
+                    title="{{ 'ebizcharge.account.addCard'|trans }}"
+                    loading="eager"
+                    referrerpolicy="origin"
+                    allow="payment"
+                ></iframe>
+            </div>
+        {% endif %}
+
+        {% if savedCards is empty %}
+            <p>{{ 'ebizcharge.account.empty'|trans }}</p>
+        {% else %}
+            <div class="row g-3">
+                {% for card in savedCards %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="ebiz-wallet-card{% if card.isDefault %} ebiz-wallet-card--default{% endif %}">
+                            <div class="ebiz-wallet-card__brand">{{ card.cardBrand|default('Card') }}</div>
+                            <div class="ebiz-wallet-card__number">{{ card.cardMasked|default('••••') }}</div>
+                            <div class="ebiz-wallet-card__meta">
+                                {% if card.cardExpiry %}
+                                    <span>{{ 'ebizcharge.account.expires'|trans }} {{ card.cardExpiry }}</span>
+                                {% endif %}
+                                {% if card.methodName %}
+                                    <span class="d-block text-truncate">{{ card.methodName }}</span>
+                                {% endif %}
+                            </div>
+                            {% if card.isDefault %}
+                                <span class="ebiz-wallet-card__default-badge">{{ 'ebizcharge.account.defaultBadge'|trans }}</span>
+                            {% endif %}
+                            <div class="ebiz-wallet-card__actions mt-3">
+                                {% if not card.isDefault %}
+                                    <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.default') }}" class="d-inline">
+                                        <input type="hidden" name="savedMethodId" value="{{ card.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{{ 'ebizcharge.account.setDefault'|trans }}</button>
+                                    </form>
+                                {% endif %}
+                                <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.delete') }}" class="d-inline ms-1"
+                                      onsubmit="return confirm('{{ 'ebizcharge.account.deleteConfirm'|trans|e('js') }}');">
+                                    <input type="hidden" name="savedMethodId" value="{{ card.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'ebizcharge.account.delete'|trans }}</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Environment and credentials</title>
+        <title lang="de-DE">Umgebung und Zugangsdaten</title>
+
+        <input-field type="single-select">
+            <name>environmentMode</name>
+            <label>Active environment</label>
+            <label lang="de-DE">Aktive Umgebung</label>
+            <required>true</required>
+            <defaultValue>sandbox</defaultValue>
+            <options>
+                <option>
+                    <id>sandbox</id>
+                    <name>Sandbox</name>
+                </option>
+                <option>
+                    <id>production</id>
+                    <name>Production</name>
+                </option>
+            </options>
+        </input-field>
+
+        <input-field type="url">
+            <name>sandboxBaseUrl</name>
+            <label>Sandbox base URL</label>
+            <helpText>Confirm this value with eBizCharge. The supplied provider materials point at production/v2 even for sandbox credentials.</helpText>
+            <required>true</required>
+            <defaultValue>https://restapi1.ebizcharge.net/production/v2</defaultValue>
+        </input-field>
+
+        <input-field type="password">
+            <name>sandboxSecurityId</name>
+            <label>Sandbox Security ID</label>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="text">
+            <name>sandboxUserId</name>
+            <label>Sandbox User ID</label>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="password">
+            <name>sandboxPassword</name>
+            <label>Sandbox Password</label>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="password">
+            <name>sandboxSubscriptionKey</name>
+            <label>Sandbox EBizSubscription-Key</label>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="url">
+            <name>productionBaseUrl</name>
+            <label>Production base URL</label>
+            <required>true</required>
+            <defaultValue>https://restapi1.ebizcharge.net/production/v2</defaultValue>
+        </input-field>
+
+        <input-field type="password">
+            <name>productionSecurityId</name>
+            <label>Production Security ID</label>
+        </input-field>
+
+        <input-field type="text">
+            <name>productionUserId</name>
+            <label>Production User ID</label>
+        </input-field>
+
+        <input-field type="password">
+            <name>productionPassword</name>
+            <label>Production Password</label>
+        </input-field>
+
+        <input-field type="password">
+            <name>productionSubscriptionKey</name>
+            <label>Production EBizSubscription-Key</label>
+        </input-field>
+
+        <component name="ebizcharge-api-test">
+            <name>activeEnvironmentConnectionTest</name>
+            <label>Connection test</label>
+            <helpText>Runs GetMerchantTransactionData against the currently active environment using the saved credentials.</helpText>
+        </component>
+    </card>
+
+    <card>
+        <title>Checkout behavior</title>
+        <title lang="de-DE">Checkout-Verhalten</title>
+
+        <input-field type="single-select">
+            <name>processingCommand</name>
+            <label>Payment command</label>
+            <helpText>Use Sale for the first simple sandbox transaction. Use AuthOnly when merchant policy requires authorization without immediate capture.</helpText>
+            <required>true</required>
+            <defaultValue>Sale</defaultValue>
+            <options>
+                <option>
+                    <id>Sale</id>
+                    <name>Sale</name>
+                </option>
+                <option>
+                    <id>AuthOnly</id>
+                    <name>AuthOnly</name>
+                </option>
+            </options>
+        </input-field>
+
+        <input-field type="text">
+            <name>shipFromZip</name>
+            <label>Ship-from ZIP</label>
+            <helpText>Required by the supplied provider certification guidance.</helpText>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="text">
+            <name>descriptionTemplate</name>
+            <label>Transaction description template</label>
+            <helpText>Supported placeholders: {{ orderNumber }}</helpText>
+            <defaultValue>Order {{ orderNumber }}</defaultValue>
+        </input-field>
+
+        <input-field type="bool">
+            <name>enforceAvsCheck</name>
+            <label>Enforce address verification check</label>
+            <helpText>When enabled, approved card payments are accepted only when eBizCharge returns a full AVS address and ZIP match.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>verificationLookbackDays</name>
+            <label>Verification lookback days</label>
+            <defaultValue>7</defaultValue>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="int">
+            <name>connectionTimeoutSeconds</name>
+            <label>Connection timeout in seconds</label>
+            <defaultValue>20</defaultValue>
+            <required>true</required>
+        </input-field>
+
+        <input-field type="int">
+            <name>retryCount</name>
+            <label>Retry count for transient provider failures</label>
+            <helpText>Used only for network errors and provider 5xx responses. Maximum effective value is 3.</helpText>
+            <defaultValue>1</defaultValue>
+            <required>true</required>
+        </input-field>
+
+    </card>
+
+    <card>
+        <title>Webhook security</title>
+        <title lang="de-DE">Webhook-Sicherheit</title>
+
+        <input-field type="text">
+            <name>webhookBasicUsername</name>
+            <label>Webhook basic auth username</label>
+        </input-field>
+
+        <input-field type="password">
+            <name>webhookBasicPassword</name>
+            <label>Webhook basic auth password</label>
+        </input-field>
+
+        <input-field type="password">
+            <name>webhookSignatureKey</name>
+            <label>Webhook signature key</label>
+        </input-field>
+    </card>
+</config>

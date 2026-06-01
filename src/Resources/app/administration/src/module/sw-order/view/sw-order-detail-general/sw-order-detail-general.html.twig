@@ -1,0 +1,31 @@
+{% block sw_order_detail_general_info_card %}
+<mt-card
+    v-if="isEbizChargePayment"
+    :title="$tc('ebizcharge.payByLink.cardTitle')"
+    class="sw-order-detail-ebizcharge-paybylink"
+>
+    <template v-if="isPayByLink">
+        <h3>{{ $tc('ebizcharge.payByLink.resendTitle') }}</h3>
+
+        <div>
+            <sw-button
+                variant="primary"
+                :is-loading="isSendingLink"
+                :disabled="isSendingLink"
+                @click="onSendPaymentLink"
+            >
+                {{ $tc('ebizcharge.payByLink.sendButton') }}
+            </sw-button>
+        </div>
+    </template>
+
+    <template v-if="ebizProviderTransactionId">
+        <div>
+            <strong>{{ $tc('ebizcharge.payByLink.transactionIdLabel') }}</strong>
+        </div>
+        <div>{{ ebizProviderTransactionId }}</div>
+    </template>
+</mt-card>
+
+{% parent %}
+{% endblock %}

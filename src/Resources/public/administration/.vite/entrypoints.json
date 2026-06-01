@@ -1,0 +1,23 @@
+{
+  "base": "/bundles/ebizchargeshopware/administration/",
+  "entryPoints": {
+    "ebiz-charge-shopware": {
+      "css": [],
+      "dynamic": [],
+      "js": [
+        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}
