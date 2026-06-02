@@ -126,8 +126,11 @@ final class ResponseNormalizer
     public function extractSearchCustomers(array $body): array
     {
         $customers = $body['searchCustomersResponse']['SearchCustomersResult']['Customer']
+            ?? $body['searchCustomersResponse']['SearchCustomersResult']
             ?? $body['searchCustomersResponse']['searchCustomersResult']['customer']
+            ?? $body['searchCustomersResponse']['searchCustomersResult']
             ?? $body['SearchCustomersResult']['Customer']
+            ?? $body['SearchCustomersResult']
             ?? null;
 
         if (!is_array($customers)) {
