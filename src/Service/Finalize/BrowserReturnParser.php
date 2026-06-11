@@ -11,7 +11,7 @@ final class BrowserReturnParser
 {
     public function parse(Request $request): BrowserReturnOutcome
     {
-        $raw = strtolower(trim((string) ($request->query->get(ProviderContract::BROWSER_RESULT_QUERY_PARAM) ?? $request->query->get('result') ?? $request->query->get('status') ?? '')));
+        $raw = strtolower(trim((string) $this->firstQueryValue($request, [ProviderContract::BROWSER_RESULT_QUERY_PARAM, 'result', 'status', 'TranResult',])));
 
         return match ($raw) {
             'approved', 'success', 'paid' => BrowserReturnOutcome::APPROVED,
@@ -24,7 +24,15 @@ final class BrowserReturnParser
 
     public function referenceNumber(Request $request): ?string
     {
-        foreach (['refNum', 'refnum', 'RefNum', 'transactionRefNum'] as $key) {
+        return $this->firstQueryValue($request, ['refNum', 'refnum', 'RefNum', 'transactionRefNum', 'TranRefNum']);
+    }
+
+    /**
+     * @param list<string> $keys
+     */
+    private function firstQueryValue(Request $request, array $keys): ?string
+    {
+        foreach ($keys as $key) {
             $value = trim((string) $request->query->get($key, ''));
             if ($value !== '') {
                 return $value;

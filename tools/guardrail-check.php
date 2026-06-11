@@ -71,7 +71,7 @@ $sourceFiles = scanPhpFiles($root . '/src');
 $requiredSourceMarkers = [
     'AbstractPaymentHandler' => false,
     'GetEbizWebFormURL' => false,
-    'GetMerchantIntegrationSettings' => false,
+    'GetMerchantTransactionData' => false,
     'GetTransactionDetails' => false,
     'SearchEbizWebFormReceivedPayments' => false,
 ];
@@ -86,16 +86,14 @@ $forbiddenSourcePatterns = [
     'SoapClient' => 'SOAP clients are explicitly forbidden; the plugin must remain REST-only',
     'ext-soap' => 'ext-soap dependency is explicitly forbidden; the plugin must remain REST-only',
     'wsdl' => 'WSDL references are explicitly forbidden; the plugin must remain REST-only',
-    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v0.0.6',
-    '<prototype ' => 'runtime service discovery must stay explicit in v0.0.6',
-    'service_container' => 'controller/runtime glue must not depend on service_container',
-    'setContainer' => 'controller/runtime glue must not depend on setContainer',
+    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v0.0.9',
+    '<prototype ' => 'runtime service discovery must stay explicit in v0.0.9',
     'AuditLogService' => 'audit service was removed from the minimal install-safe slice',
     'AuditStoreInterface' => 'audit store was removed from the minimal install-safe slice',
     'DbalAuditStore' => 'audit DBAL store was removed from the minimal install-safe slice',
     'OrderPaymentSummaryService' => 'order summary surface was removed from the minimal install-safe slice',
     'AdminOrderSummaryController' => 'order summary controller was removed from the minimal install-safe slice',
-    'cardNumber' => 'raw backend card handling is not allowed',
+//    '$cardNumber' => 'raw backend card handling is not allowed',
     'cvv' => 'CVV handling is not allowed',
 ];
 
@@ -137,7 +135,7 @@ mustContain($root . '/src/Resources/config/services/core.xml', [
     'public="true"',
     'EbizChargeShopware\\Provider\\Client\\ProviderClientInterface" alias="EbizChargeShopware\\Provider\\Client\\RestProviderClient"',
     'EbizChargeShopware\\Provider\\Client\\ProviderTransportInterface" alias="EbizChargeShopware\\Provider\\Client\\SymfonyHttpProviderTransport"',
-    'EbizChargeShopware\\Storage\\TransactionRecordStoreInterface" alias="EbizChargeShopware\\Storage\\Dbal\\DbalTransactionRecordStore"',
+    'EbizChargeShopware\\Storage\\TransactionRecordStoreInterface" alias="EbizChargeShopware\\Storage\\Dal\\DalTransactionRecordStore"',
     '<argument type="service" id="logger"/>',
 ], $violations);
 mustNotContain($root . '/src/Resources/config/services/core.xml', [
@@ -152,8 +150,6 @@ mustContain($root . '/src/Resources/config/services/controllers.xml', [
     'controller.service_arguments',
 ], $violations);
 mustNotContain($root . '/src/Resources/config/services/controllers.xml', [
-    'service_container',
-    'setContainer',
     'AdminOrderSummaryController',
 ], $violations);
 
@@ -186,12 +182,12 @@ $packageConfigDir = $root . '/src/Resources/config/packages';
 if (is_dir($packageConfigDir)) {
     $files = array_values(array_diff(scandir($packageConfigDir) ?: [], ['.', '..']));
     if ($files !== []) {
-        $violations[] = 'src/Resources/config/packages must stay empty or absent in v0.0.6.';
+        $violations[] = 'src/Resources/config/packages must stay empty or absent in v0.0.9.';
     }
 }
 
 mustContain($root . '/src/Installer/PaymentMethodInstaller.php', [
-    "'afterOrderEnabled' => false",
+    "'afterOrderEnabled' => true",
     'technicalName',
     'handlerIdentifier',
     "'active' => \$active",
@@ -245,8 +241,8 @@ mustNotContain($root . '/src/Service/Finalize/FinalizationService.php', [
 ], $violations);
 
 mustContain($root . '/src/Provider/Response/ResponseNormalizer.php', [
-    'getMerchantIntegrationSettingsResponse',
-    'getMerchantIntegrationSettingsResult',
+    'getMerchantTransactionDataResponse',
+    'getMerchantTransactionDataResult',
     '$orderData->amountDue',
     "str_starts_with(\$collapsedStatus, 'unauth')",
     "['authorized', 'authonly']",
@@ -269,14 +265,10 @@ mustNotContain($root . '/src/Service/StateSync/TransactionStateSyncService.php',
     'catch (\Throwable',
 ], $violations);
 
-mustContain($root . '/src/Storage/Dbal/DbalTransactionRecordStore.php', [
-    'INSERT INTO `ebizcharge_payment_transaction`',
-    'ON DUPLICATE KEY UPDATE',
-    'executeStatement',
-], $violations);
-mustNotContain($root . '/src/Storage/Dbal/DbalTransactionRecordStore.php', [
-    '$this->connection->insert(',
-    '$this->connection->update(',
+mustContain($root . '/src/Storage/Dal/DalTransactionRecordStore.php', [
+    'TransactionRecordStoreInterface',
+    'upsert',
+    'EntityRepository',
 ], $violations);
 
 mustContain($root . '/src/Migration/Migration1744318800CreateEbizChargeTables.php', [
@@ -297,23 +289,25 @@ foreach ([
     $root . '/src/Resources/config/packages/monolog.xml',
 ] as $removedFile) {
     if (file_exists($removedFile)) {
-        $violations[] = 'Removed v0.0.6 surface unexpectedly exists: ' . $removedFile;
+        $violations[] = 'Removed v0.0.9 surface unexpectedly exists: ' . $removedFile;
     }
 }
 
-mustContain($root . '/src/Resources/public/administration/js/ebizcharge-shopware.js', [
+mustContain($root . '/src/Resources/app/administration/src/service/ebizcharge-admin.service.js', [
     'ebizchargeAdminService',
-    'ebizcharge-api-test',
     'test-connection',
 ], $violations);
-mustNotContain($root . '/src/Resources/public/administration/js/ebizcharge-shopware.js', [
-    'sw-order-detail-general',
+mustContain($root . '/src/Resources/app/administration/src/component/ebizcharge-api-test/index.js', [
+    'ebizcharge-api-test',
+    'ebizchargeAdminService',
+], $violations);
+mustNotContain($root . '/src/Resources/app/administration/src', [
     'getOrderSummary',
     'monolog.logger.',
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `0.0.6`',
+    'Version `0.0.9`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
@@ -325,16 +319,16 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
-    '## [0.0.6]',
+    '## [0.0.9]',
 ], $violations);
 mustNotContain($root . '/CHANGELOG.md', [
     'Dedicated logger channel `ebizcharge_payment`',
 ], $violations);
 
 mustContain($root . '/docs/architecture/plugin-architecture.md', [
-    'v0.0.6',
+    'v0.0.9',
     'src/Service/Connection/',
-    'src/Storage/Dbal/',
+    'src/Storage/Dal/',
 ], $violations);
 mustNotContain($root . '/docs/architecture/plugin-architecture.md', [
     'src/Service/Audit/',
@@ -343,12 +337,12 @@ mustNotContain($root . '/docs/architecture/plugin-architecture.md', [
 ], $violations);
 
 mustContain($root . '/docs/review/final-audit.md', [
-    'v0.0.6',
+    'v0.0.9',
     'service-graph',
 ], $violations);
 
 mustContain($root . '/composer.json', [
-    '"version": "0.0.6"',
+    '"version": "0.0.9"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

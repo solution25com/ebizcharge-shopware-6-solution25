@@ -230,11 +230,11 @@ final class ResponseNormalizer
     private function assertCorrelatesToOrder(array $node, CheckoutOrderData $orderData): void
     {
         $lookupKey = $this->stringOrNull($node['TransactionLookupKey'] ?? $node['transactionLookupKey'] ?? $node['lookupKey'] ?? null);
-        $orderId = $this->stringOrNull($node['OrderId'] ?? $node['orderId'] ?? $node['orderNumber'] ?? null);
-        $invoiceNumber = $this->stringOrNull($node['invoiceNumber'] ?? $node['details']['invoice'] ?? null);
-        $amount = $this->floatOrNull($node['paidAmount'] ?? $node['amount'] ?? $node['authAmount'] ?? null);
+        $orderId = $this->stringOrNull($node['OrderId'] ?? $node['orderId'] ?? $node['OrderNumber'] ?? $node['orderNumber'] ?? null);
+        $invoiceNumber = $this->stringOrNull($node['InvoiceNumber'] ?? $node['invoiceNumber'] ?? $node['details']['Invoice'] ?? $node['details']['invoice'] ?? null);
+        $amount = $this->floatOrNull($node['PaidAmount'] ?? $node['paidAmount'] ?? $node['Amount'] ?? $node['amount'] ?? $node['AuthAmount'] ?? $node['authAmount'] ?? null);
         $currency = $this->normalizedCurrency(
-            $this->stringOrNull($node['currency'] ?? null)
+            $this->stringOrNull($node['Currency'] ?? $node['currency'] ?? null)
         );
 
         if ($lookupKey !== null && !hash_equals($orderData->orderTransactionId, $lookupKey)) {

@@ -7,7 +7,9 @@ namespace EbizChargeShopware\Service\Checkout;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\LineItemData;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -53,14 +55,22 @@ final class OrderTransactionLoader
             $firstDelivery = $deliveries->first();
             if ($firstDelivery !== null && $firstDelivery->getShippingOrderAddress() !== null) {
                 $address = $firstDelivery->getShippingOrderAddress();
-                $shippingAddress = new AddressData(
+
+              $stateCode = $address->getCountryState()?->getShortCode();
+
+              if ($stateCode !== null) {
+                $parts = explode('-', $stateCode, 2);
+                $stateCode = $parts[1] ?? $parts[0];
+              }
+
+              $shippingAddress = new AddressData(
                     $address->getFirstName(),
                     $address->getLastName(),
                     $address->getCompany(),
                     $address->getStreet(),
                     null,
                     $address->getCity(),
-                    $address->getCountryState()?->getShortCode(),
+                    $stateCode,
                     $address->getZipcode(),
                     $address->getCountry()?->getIso()
                 );
@@ -72,15 +82,15 @@ final class OrderTransactionLoader
         if ($orderLineItems !== null) {
             foreach ($orderLineItems as $lineItem) {
                 $lineItems[] = new LineItemData(
-                    $lineItem->getIdentifier(),
+                    ($lineItem->getPayload()['productNumber'] ?? null) ?: $lineItem->getIdentifier(),
                     $lineItem->getLabel(),
                     $lineItem->getLabel(),
-                    0.0,
-                    'EA',
+                    $this->lineItemDiscountAmount($lineItem),
+                    $this->lineItemUnitOfMeasure($lineItem),
                     $lineItem->getUnitPrice(),
                     (float) $lineItem->getQuantity(),
-                    true,
-                    0.0
+                    $this->lineItemTaxAmount($lineItem) > 0.0,
+                    $this->lineItemTaxAmount($lineItem)
                 );
             }
         }
@@ -89,6 +99,13 @@ final class OrderTransactionLoader
         if ($customerFullName === '') {
             $customerFullName = trim(sprintf('%s %s', $billingAddress->getFirstName(), $billingAddress->getLastName()));
         }
+
+      $billingStateCode = $billingAddress->getCountryState()?->getShortCode();
+
+      if ($billingStateCode !== null) {
+        $parts = explode('-', $billingStateCode, 2);
+        $billingStateCode = $parts[1] ?? $parts[0];
+      }
 
         return new CheckoutOrderData(
             $order->getId(),
@@ -104,7 +121,7 @@ final class OrderTransactionLoader
             $order->getCurrency()?->getIsoCode() ?? 'USD',
             $transactionAmount,
             $order->getAmountTotal(),
-            0.0,
+            $this->orderTaxAmount($order),
             $order->getShippingCosts()->getTotalPrice(),
             0.0,
             0.0,
@@ -115,7 +132,7 @@ final class OrderTransactionLoader
                 $billingAddress->getStreet(),
                 null,
                 $billingAddress->getCity(),
-                $billingAddress->getCountryState()?->getShortCode(),
+                $billingStateCode,
                 $billingAddress->getZipcode(),
                 $billingAddress->getCountry()?->getIso()
             ),
@@ -135,5 +152,72 @@ final class OrderTransactionLoader
         }
 
         return new \DateTimeImmutable($orderDate->format(\DateTimeInterface::ATOM));
+    }
+
+    private function orderTaxAmount(OrderEntity $order): float
+    {
+        $taxes = $order->getPrice()?->getCalculatedTaxes();
+        if ($taxes === null) {
+            return 0.0;
+        }
+
+        $amount = 0.0;
+        foreach ($taxes as $tax) {
+            $amount += $tax->getTax();
+        }
+
+        return round($amount, 2);
+    }
+
+    private function lineItemDiscountAmount(OrderLineItemEntity $lineItem): float
+    {
+        $payload = $lineItem->getPayload() ?? [];
+        foreach (['discountAmount', 'discount', 'lineItemDiscount'] as $key) {
+            $value = $payload[$key] ?? null;
+            if (is_numeric($value)) {
+                return round(abs((float) $value), 2);
+            }
+        }
+
+        $listPrice = $lineItem->getPrice()?->getListPrice();
+        if ($listPrice === null) {
+            return $lineItem->getTotalPrice() < 0.0 ? round(abs($lineItem->getTotalPrice()), 2) : 0.0;
+        }
+
+        $grossDiscount = ($listPrice->getPrice() - $lineItem->getUnitPrice()) * max(1.0, (float) $lineItem->getQuantity());
+
+        return round(max(0.0, $grossDiscount), 2);
+    }
+
+    private function lineItemTaxAmount(OrderLineItemEntity $lineItem): float
+    {
+        $taxes = $lineItem->getPrice()?->getCalculatedTaxes();
+        if ($taxes === null) {
+            return 0.0;
+        }
+
+        $amount = 0.0;
+        foreach ($taxes as $tax) {
+            $amount += $tax->getTax();
+        }
+
+        return round($amount, 2);
+    }
+
+    private function lineItemUnitOfMeasure(OrderLineItemEntity $lineItem): string
+    {
+        $payload = $lineItem->getPayload() ?? [];
+        $customFields = $lineItem->getCustomFields() ?? [];
+
+        foreach ([$payload, $customFields] as $source) {
+            foreach (['unitOfMeasure', 'unit', 'unitName', 'purchaseUnit', 'packUnit'] as $key) {
+                $value = $source[$key] ?? null;
+                if (is_scalar($value) && trim((string) $value) !== '') {
+                    return trim((string) $value);
+                }
+            }
+        }
+
+        return 'EA';
     }
 }

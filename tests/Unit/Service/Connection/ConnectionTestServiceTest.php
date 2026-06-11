@@ -22,8 +22,8 @@ final class ConnectionTestServiceTest extends TestCase
                 return [
                     'statusCode' => 200,
                     'body' => [
-                        'getMerchantIntegrationSettingsResponse' => [
-                            'getMerchantIntegrationSettingsResult' => [
+                        'getMerchantTransactionDataResponse' => [
+                            'getMerchantTransactionDataResult' => [
                                 'merchantName' => 'demo',
                             ],
                         ],

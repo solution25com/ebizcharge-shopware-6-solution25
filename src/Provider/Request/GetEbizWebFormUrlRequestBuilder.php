@@ -30,6 +30,7 @@ final class GetEbizWebFormUrlRequestBuilder
                 'processingCommand' => $config->processingCommand(),
                 'customerId' => $customerId,
                 'custFullName' => $orderData->customerFullName,
+                'poNum' => $orderData->orderNumber,
                 'orderId' => $orderData->orderId,
                 'invoiceNumber' => $orderData->orderNumber,
                 'payByType' => ProviderContract::PAY_BY_TYPE_CREDIT_CARD,

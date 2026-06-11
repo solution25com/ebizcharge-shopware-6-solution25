@@ -45,12 +45,16 @@ for file in \
     src/Resources/config/services/core.xml \
     src/Resources/config/services/controllers.xml \
     src/Resources/config/services/commands.xml; do
-    xmllint --noout "$file"
+    if command -v xmllint >/dev/null 2>&1; then
+        xmllint --noout "$file"
+    else
+        "$RESOLVED_PHP_BIN" -r '$file = $argv[1]; $dom = new DOMDocument(); if (!$dom->load($file)) { exit(1); }' "$file"
+    fi
 done
 
 echo "[6/8] Administration bundle syntax"
 if [[ -n "$RESOLVED_NODE_BIN" ]]; then
-    "$RESOLVED_NODE_BIN" --check src/Resources/public/administration/js/ebizcharge-shopware.js
+    "$RESOLVED_NODE_BIN" --check src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js
 else
     echo "Node.js not available in this environment; skipped JS syntax check for the prebuilt administration bundle."
 fi

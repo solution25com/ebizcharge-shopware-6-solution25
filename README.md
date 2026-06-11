@@ -2,9 +2,13 @@
 
 # eBizCharge Payment for Shopware 6.7
 
+Version `0.0.9`
+
 ## Introduction
 
 The **eBizCharge Payment Plugin** enables secure hosted credit-card payments for Shopware 6.7 stores through the eBizCharge REST hosted webform flow. Customers are redirected to eBizCharge for payment entry, keeping raw card data outside the Shopware backend.
+
+REST only integration using the eBizCharge hosted webform and REST verification APIs.
 
 The plugin supports hosted checkout, saved-card account management for registered customers, admin Pay by Link workflows, webhook status updates, and provider-backed transaction synchronization for capture, void, and refund events.
 
@@ -22,7 +26,7 @@ The plugin supports hosted checkout, saved-card account management for registere
 
 - Create `eBizCharge Pay by Link` as a Shopware payment method for admin/order workflows.
 - Automatically generate and email hosted payment links for Pay by Link order transactions.
-- Resend payment links from the Shopware Administration order detail page.
+- Resend payment links from the Shopware Administration order view.
 - Handle payment-link return, success, and failure pages in the storefront.
 
 ### Saved Cards
@@ -68,6 +72,8 @@ The plugin supports hosted checkout, saved-card account management for registere
 ## Get Started
 
 ### Installation & Activation
+
+Manual upload in Shopware Admin is supported with the packaged release ZIP.
 
 #### GitHub
 
@@ -161,7 +167,7 @@ The plugin also provides a CLI command:
 bin/console ebizcharge:test-connection
 ```
 
-Connection health is tracked per sales channel and credential fingerprint. Password-only credential changes invalidate prior health state and require a fresh successful test.
+Connection health is tracked per sales channel and credential fingerprint. password-only credential changes invalidate prior health state and require a fresh successful test.
 
 ---
 
@@ -202,7 +208,7 @@ The plugin supports admin-managed Pay by Link payments.
 
 ### Admin Resend
 
-Admins can resend the payment link from the Shopware order detail page. The resend action calls:
+Admins can resend the payment link from the Shopware order view. The resend action calls:
 
 ```text
 POST /api/_action/ebizcharge/payment-link/re-send

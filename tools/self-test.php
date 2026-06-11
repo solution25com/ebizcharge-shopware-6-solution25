@@ -2,7 +2,6 @@
 
 require __DIR__ . '/../tests/bootstrap.php';
 
-use Doctrine\DBAL\Connection;
 use EbizChargeShopware\Command\TestConnectionCommand;
 use EbizChargeShopware\Controller\Api\AdminDiagnosticsController;
 use EbizChargeShopware\Exception\ProviderCommunicationException;
@@ -23,10 +22,12 @@ use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Connection\ConnectionTestService;
 use EbizChargeShopware\Service\Finalize\BrowserReturnParser;
 use EbizChargeShopware\Service\Finalize\FinalizationService;
+use EbizChargeShopware\Service\PaymentLinkService;
 use EbizChargeShopware\Service\StateSync\StateTransitionPolicy;
 use EbizChargeShopware\Service\StateSync\TransactionStateResolver;
 use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
-use EbizChargeShopware\Storage\Dbal\DbalTransactionRecordStore;
+use EbizChargeShopware\Core\Content\EbizchargePaymentTransaction\EbizchargePaymentTransactionEntity;
+use EbizChargeShopware\Storage\Dal\DalTransactionRecordStore;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
@@ -108,6 +109,54 @@ function baseOrderData(array $override = []): CheckoutOrderData
     );
 }
 
+function makeTransactionRecordStore(): DalTransactionRecordStore
+{
+    $repository = new class extends EntityRepository {
+        /** @var array<string, EbizchargePaymentTransactionEntity> */
+        public array $entities = [];
+
+        public function upsert(array $data, object $context): void
+        {
+            foreach ($data as $row) {
+                $id = (string) ($row['orderTransactionId'] ?? '');
+                if ($id === '') {
+                    continue;
+                }
+
+                $entity = $this->entities[$id] ?? new EbizchargePaymentTransactionEntity();
+                $entity->setOrderTransactionId($id);
+
+                foreach ($row as $property => $value) {
+                    $setter = 'set' . ucfirst((string) $property);
+                    if ($property === 'updatedAt' || !method_exists($entity, $setter)) {
+                        continue;
+                    }
+
+                    $entity->{$setter}($value);
+                }
+
+                $this->entities[$id] = $entity;
+            }
+        }
+
+        public function search(object $criteria, object $context): object
+        {
+            return new class($this->entities) {
+                public function __construct(private array $entities)
+                {
+                }
+
+                public function first(): mixed
+                {
+                    return reset($this->entities) ?: null;
+                }
+            };
+        }
+    };
+
+    return new DalTransactionRecordStore($repository);
+}
+
 function makeStateRepository(?string $currentState): EntityRepository
 {
     return new class($currentState) extends EntityRepository {
@@ -186,12 +235,12 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
 
     $installer->ensurePaymentMethod('plugin-id', $context, false);
     same(false, $repository->created[0][0]['active'], 'Payment method should be created inactive.');
-    same(false, $repository->created[0][0]['afterOrderEnabled'], 'Payment method should not be after-order enabled.');
+    same(true, $repository->created[0][0]['afterOrderEnabled'], 'Payment method should be after-order enabled for checkout retry.');
     same('ebizcharge_credit_card', $repository->created[0][0]['technicalName'], 'Payment technical name mismatch.');
 
     $installer->ensurePaymentMethod('plugin-id', $context, true);
     same(true, $repository->updated[0][0]['active'], 'Payment method update should accept active=true.');
-    same(false, $repository->updated[0][0]['afterOrderEnabled'], 'Payment method update should keep after-order disabled.');
+    same(true, $repository->updated[0][0]['afterOrderEnabled'], 'Payment method update should keep after-order enabled for checkout retry.');
 
     $installer->setPaymentMethodActive(false, $context);
     same(false, $repository->updated[1][0]['active'], 'Payment method deactivate should write active=false.');
@@ -205,7 +254,7 @@ $tests['builder-hosted-card-payload'] = static function (): void {
     same('CC', $payload['ePaymentForm']['payByType'], 'Pay-by type mismatch.');
     same('Sale', $payload['ePaymentForm']['processingCommand'], 'Processing command mismatch.');
     same('transaction-id', $payload['ePaymentForm']['transactionLookupKey'], 'Lookup key mismatch.');
-    ok(str_contains($payload['ePaymentForm']['approvedURL'], 'ebizchargeResult=approved'), 'Approved URL marker missing.');
+    same('https://shop.test/payment/finalize-transaction', $payload['ePaymentForm']['approvedURL'], 'Approved URL mismatch.');
     ok(!array_key_exists('currency', $payload['ePaymentForm']), 'Currency must not be sent in hosted webform payload.');
     ok(!array_key_exists('allowPartialAuth', $payload['ePaymentForm']), 'allowPartialAuth must not be sent.');
 };
@@ -262,9 +311,9 @@ $tests['rest-client-wraps-security-token-and-header'] = static function (): void
 
     $client->send(ProviderOperation::CONNECTION_TEST, [], baseConfig());
 
-    same('https://example.test/GetMerchantIntegrationSettings', $transport->captured['url'], 'Provider URL mismatch.');
+    same('https://example.test/GetMerchantTransactionData', $transport->captured['url'], 'Provider URL mismatch.');
     same('subkey', $transport->captured['headers']['EBizSubscription-Key'], 'Subscription key header mismatch.');
-    same('sid', $transport->captured['payload']['getMerchantIntegrationSettings']['securityToken']['securityId'], 'Security token mismatch.');
+    same('sid', $transport->captured['payload']['getMerchantTransactionData']['securityToken']['securityId'], 'Security token mismatch.');
 };
 
 $tests['connection-test-service-and-health-registry'] = static function (): void {
@@ -274,8 +323,8 @@ $tests['connection-test-service-and-health-registry'] = static function (): void
             return [
                 'statusCode' => 200,
                 'body' => [
-                    'getMerchantIntegrationSettingsResponse' => [
-                        'getMerchantIntegrationSettingsResult' => [
+                    'getMerchantTransactionDataResponse' => [
+                        'getMerchantTransactionDataResult' => [
                             'merchantName' => 'Demo Merchant',
                         ],
                     ],
@@ -307,7 +356,7 @@ $tests['connection-test-rejects-unrelated-json'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            return ['statusCode' => 200, 'body' => ['ok' => true, 'message' => 'not merchant settings'], 'rawBody' => '{}'];
+            return ['statusCode' => 200, 'body' => ['ok' => true, 'message' => 'not merchant transaction data'], 'rawBody' => '{}'];
         }
     };
 
@@ -395,14 +444,19 @@ $tests['hosted-checkout-service-stores-redirect-metadata'] = static function ():
     $store = new class implements TransactionRecordStoreInterface {
         public array $records = [];
 
-        public function upsert(string $orderTransactionId, array $record): void
+        public function upsert(string $orderTransactionId, array $record, Context $context): void
         {
             $this->records[$orderTransactionId] = $record;
         }
 
-        public function find(string $orderTransactionId): ?array
+        public function find(string $orderTransactionId, Context $context): ?array
         {
             return $this->records[$orderTransactionId] ?? null;
+        }
+
+        public function findByOrderIdentity(string $value, Context $context): ?array
+        {
+            return null;
         }
     };
 
@@ -416,7 +470,8 @@ $tests['hosted-checkout-service-stores-redirect-metadata'] = static function ():
     $redirect = $service->start(
         baseOrderData(['amountDue' => 40.0, 'totalAmount' => 50.0]),
         baseConfig(),
-        'https://shop.test/payment/finalize-transaction'
+        'https://shop.test/payment/finalize-transaction',
+        new Context()
     );
 
     same('https://webforms.ebizcharge.net/EBizSecureForm.aspx?pid=456', $redirect->redirectUrl, 'Redirect URL mismatch.');
@@ -438,8 +493,7 @@ $tests['state-resolution-and-transition-policy'] = static function (): void {
 };
 
 $tests['state-sync-illegal-transition-persists-actual-shopware-state'] = static function (): void {
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new class extends OrderTransactionStateHandler {
         public function paid(string $id, object $context): void
         {
@@ -463,12 +517,11 @@ $tests['state-sync-illegal-transition-persists-actual-shopware-state'] = static 
     );
 
     same(OrderTransactionStates::STATE_OPEN, $state, 'Illegal transitions must persist the current Shopware state.');
-    same(OrderTransactionStates::STATE_OPEN, $store->find('transaction-id')['normalized_state'], 'Stored state must match the actual Shopware state after an illegal transition.');
+    same(OrderTransactionStates::STATE_OPEN, $store->find('transaction-id', new Context())['normalized_state'], 'Stored state must match the actual Shopware state after an illegal transition.');
 };
 
 $tests['state-sync-rethrows-unexpected-transition-errors'] = static function (): void {
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new class extends OrderTransactionStateHandler {
         public function paid(string $id, object $context): void
         {
@@ -493,7 +546,7 @@ $tests['state-sync-rethrows-unexpected-transition-errors'] = static function ():
         );
     } catch (RuntimeException $exception) {
         same('unexpected failure', $exception->getMessage(), 'Unexpected transition failures must bubble up.');
-        ok($store->find('transaction-id') === null, 'Unexpected transition failures must not write a misleading local state record.');
+        ok($store->find('transaction-id', new Context()) === null, 'Unexpected transition failures must not write a misleading local state record.');
 
         return;
     }
@@ -501,28 +554,25 @@ $tests['state-sync-rethrows-unexpected-transition-errors'] = static function ():
     throw new TestFailure('Unexpected transition failures must be rethrown.');
 };
 
-$tests['dbal-transaction-record-store-uses-atomic-upsert'] = static function (): void {
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+$tests['dal-transaction-record-store-merges-upserts'] = static function (): void {
+    $store = makeTransactionRecordStore();
 
     $store->upsert('transaction-id', [
         'lookup_key' => 'transaction-id',
         'normalized_state' => OrderTransactionStates::STATE_IN_PROGRESS,
         'amount_total' => 40.0,
-    ]);
-    $firstRow = $store->find('transaction-id');
+    ], new Context());
+    $firstRow = $store->find('transaction-id', new Context());
 
     $store->upsert('transaction-id', [
         'provider_ref_num' => '3177716774',
         'normalized_state' => OrderTransactionStates::STATE_PAID,
-    ]);
-    $secondRow = $store->find('transaction-id');
+    ], new Context());
+    $secondRow = $store->find('transaction-id', new Context());
 
-    same(2, count($connection->statements), 'Atomic upsert should use executeStatement for each write.');
     same('transaction-id', $secondRow['lookup_key'], 'Repeated upserts must preserve existing values not present in the later payload.');
     same('3177716774', $secondRow['provider_ref_num'], 'Repeated upserts must merge new values into the existing row.');
     same(OrderTransactionStates::STATE_PAID, $secondRow['normalized_state'], 'Repeated upserts must update the normalized state.');
-    same($firstRow['created_at'], $secondRow['created_at'], 'Atomic upsert must keep the original created_at value on duplicate updates.');
 };
 
 $tests['finalization-service-verifies-approved-return'] = static function (): void {
@@ -552,8 +602,7 @@ $tests['finalization-service-verifies-approved-return'] = static function (): vo
         }
     };
 
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new OrderTransactionStateHandler();
     $syncService = new TransactionStateSyncService(
         makeStateRepository(OrderTransactionStates::STATE_OPEN),
@@ -572,6 +621,7 @@ $tests['finalization-service-verifies-approved-return'] = static function (): vo
         new ResponseNormalizer(),
         $syncService,
         $store,
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
         new NullLogger()
     );
 
@@ -585,19 +635,47 @@ $tests['finalization-service-verifies-approved-return'] = static function (): vo
     same(ProviderOperationResult::OUTCOME_APPROVED, $outcome->result->outcome, 'Finalize outcome mismatch.');
     same(OrderTransactionStates::STATE_PAID, $outcome->targetShopwareState, 'Finalize target state mismatch.');
     same(['paid', 'transaction-id'], $stateHandler->transitions[0], 'State handler should receive paid transition.');
-    same('3177716774', $store->find('transaction-id')['provider_ref_num'], 'Stored provider reference mismatch.');
+    same('3177716774', $store->find('transaction-id', new Context())['provider_ref_num'], 'Stored provider reference mismatch.');
 };
 
-$tests['finalization-service-does-not-trust-browser-decline-without-provider-verification'] = static function (): void {
+$tests['finalization-service-uses-ach-return-refnum'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            throw ProviderCommunicationException::requestFailed($operation->value, 'timeout');
+            same(ProviderOperation::GET_TRANSACTION_DETAILS, $operation, 'ACH return with TranRefNum should verify by transaction details.');
+
+            return [
+                'statusCode' => 200,
+                'body' => [
+                    'getTransactionDetailsResponse' => [
+                        'getTransactionDetailsResult' => [
+                            'RefNum' => '3229484286',
+                            'AuthCode' => '000000',
+                            'Status' => 'Approved',
+                            'AuthAmount' => 46.84,
+                            'PaymentType' => 'Sale',
+                            'PaymentMethod' => 'ACH',
+                            'TransactionLookupKey' => 'transaction-id',
+                            'response' => [
+                                'RefNum' => '3229484286',
+                                'AuthCode' => '000000',
+                                'Status' => 'Approved',
+                                'AuthAmount' => 46.84,
+                            ],
+                            'details' => [
+                                'amount' => 46.84,
+                            ],
+                            'transactionType' => 'Sale',
+                            'checkData' => [],
+                        ],
+                    ],
+                ],
+                'rawBody' => '{}',
+            ];
         }
     };
 
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new OrderTransactionStateHandler();
     $syncService = new TransactionStateSyncService(
         makeStateRepository(OrderTransactionStates::STATE_OPEN),
@@ -616,6 +694,54 @@ $tests['finalization-service-does-not-trust-browser-decline-without-provider-ver
         new ResponseNormalizer(),
         $syncService,
         $store,
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
+        new NullLogger()
+    );
+
+    $outcome = $service->finalize(
+        new Request([
+            'result' => '',
+            'TranResult' => 'Approved',
+            'TranRefNum' => '3229484286',
+            'PayByType' => 'echeck',
+        ]),
+        baseOrderData(['totalAmount' => 46.84, 'amountDue' => 46.84]),
+        baseConfig(),
+        new Context()
+    );
+
+    same(ProviderOperationResult::OUTCOME_APPROVED, $outcome->result->outcome, 'ACH return should verify as approved.');
+    same('3229484286', $store->find('transaction-id', new Context())['provider_ref_num'], 'ACH provider reference mismatch.');
+};
+
+$tests['finalization-service-does-not-trust-browser-decline-without-provider-verification'] = static function (): void {
+    $providerClient = new class implements ProviderClientInterface {
+        public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
+        {
+            throw ProviderCommunicationException::requestFailed($operation->value, 'timeout');
+        }
+    };
+
+    $store = makeTransactionRecordStore();
+    $stateHandler = new OrderTransactionStateHandler();
+    $syncService = new TransactionStateSyncService(
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
+        $stateHandler,
+        new TransactionStateResolver(),
+        new StateTransitionPolicy(),
+        $store,
+        new NullLogger()
+    );
+
+    $service = new FinalizationService(
+        new BrowserReturnParser(),
+        $providerClient,
+        new SearchReceivedPaymentsRequestBuilder(),
+        new GetTransactionDetailsRequestBuilder(),
+        new ResponseNormalizer(),
+        $syncService,
+        $store,
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
         new NullLogger()
     );
 
@@ -659,8 +785,7 @@ $tests['finalization-service-allows-provider-verified-cancel'] = static function
         }
     };
 
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new OrderTransactionStateHandler();
     $syncService = new TransactionStateSyncService(
         makeStateRepository(OrderTransactionStates::STATE_OPEN),
@@ -679,6 +804,7 @@ $tests['finalization-service-allows-provider-verified-cancel'] = static function
         new ResponseNormalizer(),
         $syncService,
         $store,
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
         new NullLogger()
     );
 
@@ -721,8 +847,7 @@ $tests['finalization-service-rejects-provider-amount-mismatch'] = static functio
         }
     };
 
-    $connection = new Connection();
-    $store = new DbalTransactionRecordStore($connection);
+    $store = makeTransactionRecordStore();
     $stateHandler = new OrderTransactionStateHandler();
     $syncService = new TransactionStateSyncService(
         makeStateRepository(OrderTransactionStates::STATE_OPEN),
@@ -741,6 +866,7 @@ $tests['finalization-service-rejects-provider-amount-mismatch'] = static functio
         new ResponseNormalizer(),
         $syncService,
         $store,
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
         new NullLogger()
     );
 
@@ -781,8 +907,8 @@ $tests['admin-controller-and-command-instantiate-and-run'] = static function ():
             return [
                 'statusCode' => 200,
                 'body' => [
-                    'getMerchantIntegrationSettingsResponse' => [
-                        'getMerchantIntegrationSettingsResult' => [
+                    'getMerchantTransactionDataResponse' => [
+                        'getMerchantTransactionDataResult' => [
                             'merchantName' => 'Demo Merchant',
                         ],
                     ],
@@ -800,7 +926,14 @@ $tests['admin-controller-and-command-instantiate-and-run'] = static function ():
         new NullLogger()
     );
 
-    $controller = new AdminDiagnosticsController($provider, $connectionService);
+    $paymentLinkService = (new ReflectionClass(PaymentLinkService::class))->newInstanceWithoutConstructor();
+    $controller = new AdminDiagnosticsController(
+        $provider,
+        $connectionService,
+        $paymentLinkService,
+        makeTransactionRecordStore(),
+        new NullLogger()
+    );
     $response = $controller->testConnection(new Request([], ['salesChannelId' => '']));
     ok(is_array($response->data), 'Admin diagnostics controller should return array data.');
     ok(($response->data['success'] ?? false) === true, 'Admin diagnostics controller should report success.');

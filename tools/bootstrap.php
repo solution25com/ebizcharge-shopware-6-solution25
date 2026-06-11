@@ -32,6 +32,38 @@ namespace Psr\Log {
     }
 }
 
+namespace Monolog {
+    if (!class_exists(Logger::class)) {
+        class Logger implements \Psr\Log\LoggerInterface
+        {
+            public function __construct(...$args)
+            {
+            }
+
+            public function emergency(string|\Stringable $message, array $context = []): void {}
+            public function alert(string|\Stringable $message, array $context = []): void {}
+            public function critical(string|\Stringable $message, array $context = []): void {}
+            public function error(string|\Stringable $message, array $context = []): void {}
+            public function warning(string|\Stringable $message, array $context = []): void {}
+            public function notice(string|\Stringable $message, array $context = []): void {}
+            public function info(string|\Stringable $message, array $context = []): void {}
+            public function debug(string|\Stringable $message, array $context = []): void {}
+            public function log($level, string|\Stringable $message, array $context = []): void {}
+        }
+    }
+}
+
+namespace Monolog\Handler {
+    if (!class_exists(RotatingFileHandler::class)) {
+        class RotatingFileHandler
+        {
+            public function __construct(...$args)
+            {
+            }
+        }
+    }
+}
+
 namespace Doctrine\DBAL {
     if (!class_exists(Connection::class)) {
         class Connection
@@ -90,11 +122,125 @@ namespace Doctrine\DBAL {
     }
 }
 
+namespace Shopware\Core\Framework\DataAbstractionLayer {
+    if (!class_exists(EntityDefinition::class)) {
+        abstract class EntityDefinition
+        {
+            abstract public function getEntityName(): string;
+
+            public function getEntityClass(): string
+            {
+                return '';
+            }
+
+            public function getCollectionClass(): string
+            {
+                return '';
+            }
+        }
+    }
+
+    if (!class_exists(FieldCollection::class)) {
+        class FieldCollection
+        {
+            public function __construct(public array $fields = [])
+            {
+            }
+        }
+    }
+}
+
+namespace Shopware\Core\Framework\DataAbstractionLayer\Field {
+    if (!class_exists(Field::class)) {
+        class Field
+        {
+            public function __construct(...$args)
+            {
+            }
+
+            public function addFlags(...$flags): static
+            {
+                return $this;
+            }
+        }
+    }
+
+    foreach ([
+        CreatedAtField::class,
+        DateTimeField::class,
+        FkField::class,
+        FloatField::class,
+        IdField::class,
+        LongTextField::class,
+        StringField::class,
+        UpdatedAtField::class,
+    ] as $class) {
+        if (!class_exists($class)) {
+            class_alias(Field::class, $class);
+        }
+    }
+}
+
+namespace Shopware\Core\Framework\DataAbstractionLayer\Field\Flag {
+    if (!class_exists(PrimaryKey::class)) {
+        class PrimaryKey
+        {
+        }
+    }
+
+    if (!class_exists(Required::class)) {
+        class Required
+        {
+        }
+    }
+}
+
+namespace Shopware\Core\Checkout\Customer {
+    if (!class_exists(CustomerDefinition::class)) {
+        class CustomerDefinition
+        {
+        }
+    }
+}
+
+namespace Shopware\Core\System\SalesChannel {
+    if (!class_exists(SalesChannelDefinition::class)) {
+        class SalesChannelDefinition
+        {
+        }
+    }
+}
+
+namespace Shopware\Core\Checkout\Order {
+    if (!class_exists(OrderDefinition::class)) {
+        class OrderDefinition
+        {
+        }
+    }
+}
+
+namespace Shopware\Core\Checkout\Order\Aggregate\OrderTransaction {
+    if (!class_exists(OrderTransactionDefinition::class)) {
+        class OrderTransactionDefinition
+        {
+        }
+    }
+}
+
 namespace Symfony\Contracts\HttpClient {
     if (!interface_exists(HttpClientInterface::class)) {
         interface HttpClientInterface
         {
             public function request(string $method, string $url, array $options = []): object;
+        }
+    }
+}
+
+namespace Symfony\Component\EventDispatcher {
+    if (!interface_exists(EventSubscriberInterface::class)) {
+        interface EventSubscriberInterface
+        {
+            public static function getSubscribedEvents(): array;
         }
     }
 }
@@ -158,6 +304,36 @@ namespace Symfony\Component\HttpFoundation {
             public function __construct(public mixed $data)
             {
             }
+        }
+    }
+
+    if (!class_exists(RequestStack::class)) {
+        class RequestStack
+        {
+        }
+    }
+}
+
+namespace Symfony\Component\Routing {
+    if (!interface_exists(RouterInterface::class)) {
+        interface RouterInterface
+        {
+        }
+    }
+}
+
+namespace Twig {
+    if (!class_exists(Environment::class)) {
+        class Environment
+        {
+        }
+    }
+}
+
+namespace Shopware\Core\Content\Mail\Service {
+    if (!class_exists(MailService::class)) {
+        class MailService
+        {
         }
     }
 }
@@ -336,6 +512,12 @@ namespace Shopware\Core\Framework\Plugin\Util {
 }
 
 namespace Shopware\Core\Framework\DataAbstractionLayer {
+    if (!class_exists(Entity::class)) {
+        class Entity
+        {
+        }
+    }
+
     if (!class_exists(EntityRepository::class)) {
         class EntityRepository
         {
@@ -556,6 +738,7 @@ namespace Shopware\Core\Checkout\Order\Aggregate\OrderTransaction {
         class OrderTransactionEntity
         {
             private ?object $stateMachineState = null;
+            private array $customFields = [];
 
             public function setStateMachineState(?object $stateMachineState): void
             {
@@ -565,6 +748,16 @@ namespace Shopware\Core\Checkout\Order\Aggregate\OrderTransaction {
             public function getStateMachineState(): ?object
             {
                 return $this->stateMachineState;
+            }
+
+            public function getCustomFields(): array
+            {
+                return $this->customFields;
+            }
+
+            public function setCustomFields(array $customFields): void
+            {
+                $this->customFields = $customFields;
             }
         }
     }
@@ -619,6 +812,14 @@ namespace Shopware\Core\Framework\Migration {
             abstract public function update(\Doctrine\DBAL\Connection $connection): void;
 
             abstract public function updateDestructive(\Doctrine\DBAL\Connection $connection): void;
+        }
+    }
+}
+
+namespace Shopware\Storefront\Controller {
+    if (!class_exists(StorefrontController::class)) {
+        class StorefrontController
+        {
         }
     }
 }

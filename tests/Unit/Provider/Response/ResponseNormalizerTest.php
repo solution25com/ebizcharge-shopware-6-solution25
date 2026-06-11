@@ -82,8 +82,8 @@ final class ResponseNormalizerTest extends TestCase
     {
         $normalizer = new ResponseNormalizer();
         self::assertTrue($normalizer->connectionTestSucceeded([
-            'getMerchantIntegrationSettingsResponse' => [
-                'getMerchantIntegrationSettingsResult' => [
+            'getMerchantTransactionDataResponse' => [
+                'getMerchantTransactionDataResult' => [
                     'merchantName' => 'demo',
                 ],
             ],

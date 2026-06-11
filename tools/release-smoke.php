@@ -91,7 +91,7 @@ $requiredFiles = [
     $pluginRoot . '/src/Resources/config/services/core.xml',
     $pluginRoot . '/src/Resources/config/services/controllers.xml',
     $pluginRoot . '/src/Resources/config/services/commands.xml',
-    $pluginRoot . '/src/Resources/public/administration/js/ebizcharge-shopware.js',
+    $pluginRoot . '/src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -111,7 +111,7 @@ $comparisonPairs = [
     'src/Resources/config/services/core.xml' => 'src/Resources/config/services/core.xml',
     'src/Resources/config/services/controllers.xml' => 'src/Resources/config/services/controllers.xml',
     'src/Resources/config/services/commands.xml' => 'src/Resources/config/services/commands.xml',
-    'src/Resources/public/administration/js/ebizcharge-shopware.js' => 'src/Resources/public/administration/js/ebizcharge-shopware.js',
+    'src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js' => 'src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js',
 ];
 
 foreach ($comparisonPairs as $sourceRelative => $archiveRelative) {

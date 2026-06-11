@@ -9,7 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 
 final class PaymentMethodInstallerTest extends TestCase
 {
-    public function testCreatesAndUpdatesPaymentMethodWithAfterOrderDisabled(): void
+    public function testCreatesAndUpdatesPaymentMethodWithAfterOrderEnabled(): void
     {
         $repository = new class extends EntityRepository {
             public ?string $existingId = null;
@@ -46,9 +46,9 @@ final class PaymentMethodInstallerTest extends TestCase
         $context = new Context();
 
         $installer->ensurePaymentMethod('plugin-id', $context, false);
-        self::assertFalse($repository->created[0][0]['afterOrderEnabled']);
+        self::assertTrue($repository->created[0][0]['afterOrderEnabled']);
 
         $installer->ensurePaymentMethod('plugin-id', $context, true);
-        self::assertFalse($repository->updated[0][0]['afterOrderEnabled']);
+        self::assertTrue($repository->updated[0][0]['afterOrderEnabled']);
     }
 }

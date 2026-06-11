@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.9] - 2026-06-11
+
+### Fixed
+
+- Added purchase order number to hosted checkout payloads.
+- Corrected Shopware tax, SKU, discount, unit-of-measure, and line-item tax mapping in hosted checkout data.
+- Improved provider verification parsing for eBizCharge return/reference casing variants.
+- Kept saved-card state short codes compatible with eBizCharge hosted forms.
+- Aligned validation guardrails, self-tests, and release packaging.
+
 ## [0.0.8] - 2026-06-02
 
 - Bug fixing and improvements
@@ -37,7 +47,7 @@
 - Narrowed `CreditCardPaymentHandler::validate()` to return `Struct` and `pay()` to return `RedirectResponse`, matching the actual Shopware 6.7 behavior without widening the payment scope.
 - Cleaned `OrderTransactionLoader` to align with Shopware 6.7 entity typing while preserving the current authority model: order-transaction amount remains authoritative and order total remains descriptive only.
 - `TransactionStateSyncService` now persists the actual current Shopware state after illegal transitions instead of silently writing the rejected target state.
-- `DbalTransactionRecordStore::upsert()` now uses one atomic `INSERT ... ON DUPLICATE KEY UPDATE` path instead of a read-then-write sequence.
+- `DalTransactionRecordStore::upsert()` preserves existing transaction metadata while merging later provider verification fields.
 
 ### Fixed
 
@@ -67,7 +77,7 @@
 
 ### Fixed
 
-- `ResponseNormalizer::connectionTestSucceeded()` no longer accepts arbitrary non-empty JSON; it now requires the expected `GetMerchantIntegrationSettings` response envelope and result payload.
+- `ResponseNormalizer::connectionTestSucceeded()` no longer accepts arbitrary non-empty JSON; it now requires the expected `GetMerchantTransactionData` response envelope and result payload.
 - `FinalizationService` no longer treats browser-reported `declined` or `cancelled` outcomes as authoritative. All outcomes now attempt provider verification first.
 - Provider verification now rejects amount mismatches against the Shopware order transaction instead of allowing fallback comparison against the full order total.
 - `CreditCardPaymentHandler::pay()` now validates only the authoritative transaction amount, not the descriptive order total.

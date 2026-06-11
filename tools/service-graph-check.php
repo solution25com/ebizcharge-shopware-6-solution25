@@ -18,9 +18,18 @@ if (!is_file($mainServicesXml)) {
 
 $coreServiceTypes = [
     'payment_method.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
+    'customer.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
+    'ebizcharge_vaulted_customer.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
+    'ebizcharge_payment_transaction.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
+    'ebizcharge_payment_link.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
+    'mail_template.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
     'order_transaction.repository' => Shopware\Core\Framework\DataAbstractionLayer\EntityRepository::class,
     'logger' => Psr\Log\LoggerInterface::class,
     'http_client' => Symfony\Contracts\HttpClient\HttpClientInterface::class,
+    'request_stack' => Symfony\Component\HttpFoundation\RequestStack::class,
+    'router' => Symfony\Component\Routing\RouterInterface::class,
+    'twig' => Twig\Environment::class,
+    'Shopware\Core\Content\Mail\Service\MailService' => Shopware\Core\Content\Mail\Service\MailService::class,
     'Doctrine\DBAL\Connection' => Doctrine\DBAL\Connection::class,
     'Shopware\Core\System\SystemConfig\SystemConfigService' => Shopware\Core\System\SystemConfig\SystemConfigService::class,
     'Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler' => Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler::class,
@@ -40,7 +49,7 @@ $packageConfigDir = $root . '/src/Resources/config/packages';
 if (is_dir($packageConfigDir)) {
     $packageEntries = array_values(array_diff(scandir($packageConfigDir) ?: [], ['.', '..']));
     if ($packageEntries !== []) {
-        $violations[] = 'src/Resources/config/packages contains runtime files, but v0.0.6 does not explicitly load package config during plugin boot.';
+        $violations[] = 'src/Resources/config/packages contains runtime files, but v0.0.9 does not explicitly load package config during plugin boot.';
     }
 }
 
@@ -52,7 +61,7 @@ foreach ($graph['files'] as $file) {
     }
 
     if (str_contains($content, 'monolog.logger.')) {
-        $violations[] = sprintf('%s references a plugin-specific monolog channel; v0.0.6 must use the default logger service only.', $file);
+        $violations[] = sprintf('%s references a plugin-specific monolog channel; v0.0.9 must use the default logger service only.', $file);
     }
 
     if (str_contains($content, '<prototype ')) {
@@ -209,7 +218,7 @@ function loadServiceFile(string $file, array &$graph, array &$violations): void
         }
 
         if ($node->localName === 'prototype') {
-            $violations[] = sprintf('%s contains a <prototype ...> entry; v0.0.6 requires explicit services only.', $realPath);
+            $violations[] = sprintf('%s contains a <prototype ...> entry; v0.0.9 requires explicit services only.', $realPath);
             continue;
         }
 

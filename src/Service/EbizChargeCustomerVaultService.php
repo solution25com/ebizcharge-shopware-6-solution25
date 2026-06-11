@@ -294,7 +294,7 @@ final class EbizChargeCustomerVaultService
             $billing?->getStreet() ?? 'n/a',
             null,
             $billing?->getCity() ?? 'n/a',
-            $billing?->getCountryState()?->getShortCode(),
+            $this->normalizeStateCode($billing?->getCountryState()?->getShortCode()),
             $billing?->getZipcode() ?? '00000',
             $billing?->getCountry()?->getIso() ?? 'US'
         );
@@ -411,7 +411,7 @@ final class EbizChargeCustomerVaultService
             $billing->getStreet(),
             null,
             $billing->getCity(),
-            $billing->getCountryState()?->getShortCode(),
+            $this->normalizeStateCode($billing->getCountryState()?->getShortCode()),
             (string) $billing->getZipcode(),
             $billing->getCountry()?->getIso()
         );
@@ -434,5 +434,16 @@ final class EbizChargeCustomerVaultService
         }
 
         return $token;
+    }
+
+    private function normalizeStateCode(?string $stateCode): ?string
+    {
+        if ($stateCode === null || $stateCode === '') {
+            return null;
+        }
+
+        $parts = explode('-', $stateCode, 2);
+
+        return $parts[1] ?? $parts[0];
     }
 }

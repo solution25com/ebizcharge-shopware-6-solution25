@@ -34,8 +34,8 @@ final class RestProviderClientTest extends TestCase
         $config = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}');
         $client->send(ProviderOperation::CONNECTION_TEST, [], $config);
 
-        self::assertSame('https://example.test/GetMerchantIntegrationSettings', $transport->captured['url']);
+        self::assertSame('https://example.test/GetMerchantTransactionData', $transport->captured['url']);
         self::assertSame('subkey', $transport->captured['headers']['EBizSubscription-Key']);
-        self::assertSame('sid', $transport->captured['payload']['getMerchantIntegrationSettings']['securityToken']['securityId']);
+        self::assertSame('sid', $transport->captured['payload']['getMerchantTransactionData']['securityToken']['securityId']);
     }
 }
