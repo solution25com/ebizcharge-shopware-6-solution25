@@ -56,14 +56,14 @@ final class OrderTransactionLoader
             if ($firstDelivery !== null && $firstDelivery->getShippingOrderAddress() !== null) {
                 $address = $firstDelivery->getShippingOrderAddress();
 
-              $stateCode = $address->getCountryState()?->getShortCode();
+                $stateCode = $address->getCountryState()?->getShortCode();
 
-              if ($stateCode !== null) {
-                $parts = explode('-', $stateCode, 2);
-                $stateCode = $parts[1] ?? $parts[0];
-              }
+                if ($stateCode !== null) {
+                    $parts = explode('-', $stateCode, 2);
+                    $stateCode = $parts[1] ?? $parts[0];
+                }
 
-              $shippingAddress = new AddressData(
+                $shippingAddress = new AddressData(
                     $address->getFirstName(),
                     $address->getLastName(),
                     $address->getCompany(),
@@ -100,12 +100,12 @@ final class OrderTransactionLoader
             $customerFullName = trim(sprintf('%s %s', $billingAddress->getFirstName(), $billingAddress->getLastName()));
         }
 
-      $billingStateCode = $billingAddress->getCountryState()?->getShortCode();
+        $billingStateCode = $billingAddress->getCountryState()?->getShortCode();
 
-      if ($billingStateCode !== null) {
-        $parts = explode('-', $billingStateCode, 2);
-        $billingStateCode = $parts[1] ?? $parts[0];
-      }
+        if ($billingStateCode !== null) {
+            $parts = explode('-', $billingStateCode, 2);
+            $billingStateCode = $parts[1] ?? $parts[0];
+        }
 
         return new CheckoutOrderData(
             $order->getId(),
