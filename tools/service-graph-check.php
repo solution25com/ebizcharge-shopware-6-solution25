@@ -49,7 +49,7 @@ $packageConfigDir = $root . '/src/Resources/config/packages';
 if (is_dir($packageConfigDir)) {
     $packageEntries = array_values(array_diff(scandir($packageConfigDir) ?: [], ['.', '..']));
     if ($packageEntries !== []) {
-        $violations[] = 'src/Resources/config/packages contains runtime files, but v0.0.9 does not explicitly load package config during plugin boot.';
+        $violations[] = 'src/Resources/config/packages contains runtime files, but v1.0.0 does not explicitly load package config during plugin boot.';
     }
 }
 
@@ -61,7 +61,7 @@ foreach ($graph['files'] as $file) {
     }
 
     if (str_contains($content, 'monolog.logger.')) {
-        $violations[] = sprintf('%s references a plugin-specific monolog channel; v0.0.9 must use the default logger service only.', $file);
+        $violations[] = sprintf('%s references a plugin-specific monolog channel; v1.0.0 must use the default logger service only.', $file);
     }
 
     if (str_contains($content, '<prototype ')) {
@@ -218,7 +218,7 @@ function loadServiceFile(string $file, array &$graph, array &$violations): void
         }
 
         if ($node->localName === 'prototype') {
-            $violations[] = sprintf('%s contains a <prototype ...> entry; v0.0.9 requires explicit services only.', $realPath);
+            $violations[] = sprintf('%s contains a <prototype ...> entry; v1.0.0 requires explicit services only.', $realPath);
             continue;
         }
 

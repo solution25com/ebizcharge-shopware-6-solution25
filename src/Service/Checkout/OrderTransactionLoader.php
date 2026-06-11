@@ -156,10 +156,7 @@ final class OrderTransactionLoader
 
     private function orderTaxAmount(OrderEntity $order): float
     {
-        $taxes = $order->getPrice()?->getCalculatedTaxes();
-        if ($taxes === null) {
-            return 0.0;
-        }
+        $taxes = $order->getPrice()->getCalculatedTaxes();
 
         $amount = 0.0;
         foreach ($taxes as $tax) {

@@ -86,8 +86,8 @@ $forbiddenSourcePatterns = [
     'SoapClient' => 'SOAP clients are explicitly forbidden; the plugin must remain REST-only',
     'ext-soap' => 'ext-soap dependency is explicitly forbidden; the plugin must remain REST-only',
     'wsdl' => 'WSDL references are explicitly forbidden; the plugin must remain REST-only',
-    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v0.0.9',
-    '<prototype ' => 'runtime service discovery must stay explicit in v0.0.9',
+    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v1.0.0',
+    '<prototype ' => 'runtime service discovery must stay explicit in v1.0.0',
     'AuditLogService' => 'audit service was removed from the minimal install-safe slice',
     'AuditStoreInterface' => 'audit store was removed from the minimal install-safe slice',
     'DbalAuditStore' => 'audit DBAL store was removed from the minimal install-safe slice',
@@ -182,7 +182,7 @@ $packageConfigDir = $root . '/src/Resources/config/packages';
 if (is_dir($packageConfigDir)) {
     $files = array_values(array_diff(scandir($packageConfigDir) ?: [], ['.', '..']));
     if ($files !== []) {
-        $violations[] = 'src/Resources/config/packages must stay empty or absent in v0.0.9.';
+        $violations[] = 'src/Resources/config/packages must stay empty or absent in v1.0.0.';
     }
 }
 
@@ -289,7 +289,7 @@ foreach ([
     $root . '/src/Resources/config/packages/monolog.xml',
 ] as $removedFile) {
     if (file_exists($removedFile)) {
-        $violations[] = 'Removed v0.0.9 surface unexpectedly exists: ' . $removedFile;
+        $violations[] = 'Removed v1.0.0 surface unexpectedly exists: ' . $removedFile;
     }
 }
 
@@ -307,7 +307,7 @@ mustNotContain($root . '/src/Resources/app/administration/src', [
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `0.0.9`',
+    'Version `1.0.0`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
@@ -319,14 +319,14 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
-    '## [0.0.9]',
+    '## [1.0.0]',
 ], $violations);
 mustNotContain($root . '/CHANGELOG.md', [
     'Dedicated logger channel `ebizcharge_payment`',
 ], $violations);
 
 mustContain($root . '/docs/architecture/plugin-architecture.md', [
-    'v0.0.9',
+    'v1.0.0',
     'src/Service/Connection/',
     'src/Storage/Dal/',
 ], $violations);
@@ -337,12 +337,12 @@ mustNotContain($root . '/docs/architecture/plugin-architecture.md', [
 ], $violations);
 
 mustContain($root . '/docs/review/final-audit.md', [
-    'v0.0.9',
+    'v1.0.0',
     'service-graph',
 ], $violations);
 
 mustContain($root . '/composer.json', [
-    '"version": "0.0.9"',
+    '"version": "1.0.0"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

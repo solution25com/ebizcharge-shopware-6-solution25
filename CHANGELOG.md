@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.0] - 2026-06-11
+
+### Fixed
+
+- Fixed Shopware extension verifier issues and aligned release package metadata.
+
 ## [0.0.9] - 2026-06-11
 
 ### Fixed
