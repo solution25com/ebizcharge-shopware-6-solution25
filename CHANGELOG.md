@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.1] - 2026-06-12
+
+### Changed
+
+- Updated saved-card storefront styling.
+
 ## [1.0.0] - 2026-06-11
 
 ### Fixed
