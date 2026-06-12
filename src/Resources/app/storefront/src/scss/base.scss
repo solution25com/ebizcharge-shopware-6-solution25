@@ -4,7 +4,7 @@
     min-height: 180px;
     flex-direction: column;
     justify-content: space-between;
-    padding: 1.25rem 1.25rem 1rem;
+    padding: 20px;
     border-radius: 14px;
     background: linear-gradient(135deg, #1a1f36 0%, #2d3a62 45%, #1f2b4d 100%);
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
@@ -36,7 +36,22 @@
 }
 
 .ebiz-wallet-card__actions .btn {
-    color: #0f172a;
+    border-color: rgba(255, 255, 255, 0.65);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.ebiz-wallet-card__actions .btn-outline-secondary {
+    border: none;
+    border-radius: 8px;
+    background-color: #4263f9;
+    color: #ffffff;
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger {
+    border-radius: 8px;
+    border-color: rgba(248, 113, 113, 0.9);
+    color: #fecaca;
 }
 
 .ebiz-wallet-card__default-badge {
