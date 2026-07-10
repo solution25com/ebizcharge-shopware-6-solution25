@@ -6,7 +6,7 @@ Version `1.0.2`
 
 ## Introduction
 
-The **EBizCharge Payment Plugin** enables secure hosted payments for Shopware 6.7 stores through the EBizCharge REST hosted webform flow. Customers are redirected to EBizCharge for payment entry, keeping raw payment data outside the Shopware backend.
+The **EBizCharge Payment Plugin** enables secure payments for Shopware 6.7 stores through the EBizCharge REST hosted webform and customer-vault flows. For new payment entry, customers are redirected to EBizCharge, keeping raw payment data outside the Shopware backend.
 
 REST only integration using the EBizCharge hosted webform and REST verification APIs.
 
@@ -197,7 +197,8 @@ For registered customers, checkout displays saved EBizCharge payment methods whe
 - Customers can choose a saved card or saved bank account from the checkout payment section.
 - Saved cards and saved bank accounts are grouped separately.
 - Saved cards can request the card security code when EBizCharge marks it as required.
-- The hosted EBizCharge form is still used when the customer chooses to pay with a new payment method.
+- Saved payment methods are selected in Shopware checkout, not inside the hosted EBizCharge form.
+- The hosted EBizCharge form is used when the customer chooses to pay with a new payment method.
 
 ---
 
