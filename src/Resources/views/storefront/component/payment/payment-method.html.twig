@@ -1,0 +1,73 @@
+{% sw_extends '@Storefront/storefront/component/payment/payment-method.html.twig' %}
+
+{% block component_payment_method_description %}
+    {{ parent() }}
+
+    {% set ebizSavedCards = page.extensions.ebizchargeSavedCards.cards ?? [] %}
+    {% set isEbizChargeCreditCard = payment.handlerIdentifier == 'EbizChargeShopware\\Checkout\\Payment\\Handler\\CreditCardPaymentHandler' %}
+    {% set isSelected = payment.id is same as(selectedPaymentMethodId) %}
+
+    {% if isEbizChargeCreditCard and isSelected %}
+        <div class="ebiz-saved-card-checkout mt-3" data-ebiz-saved-card-checkout>
+            <label class="form-label" for="ebizchargeSavedMethodId">
+                {{ 'ebizcharge.checkout.savedCardLabel'|trans|sw_sanitize }}
+            </label>
+
+            <select class="form-select"
+                    id="ebizchargeSavedMethodId"
+                    name="ebizchargeSavedMethodId"
+                    form="confirmOrderForm"
+                    data-ebiz-saved-method-select>
+                <option value="" data-requires-card-code="0">
+                    {{ 'ebizcharge.checkout.hostedFormOption'|trans|sw_sanitize }}
+                </option>
+                {% set savedAchMethods = ebizSavedCards|filter(card => card.type|default('card') == 'ach') %}
+                {% set savedCardMethods = ebizSavedCards|filter(card => card.type|default('card') != 'ach') %}
+                {% if savedAchMethods is not empty %}
+                    <optgroup label="{{ 'ebizcharge.checkout.savedAchGroup'|trans|sw_sanitize }}">
+                        {% for card in savedAchMethods %}
+                            <option value="{{ card.methodId }}"
+                                    data-method-type="ach"
+                                    data-requires-card-code="0">
+                                {{ card.methodName ?: card.brand ?: card.displayType ?: 'Bank account' }}
+                                {{ card.masked }}
+                            </option>
+                        {% endfor %}
+                    </optgroup>
+                {% endif %}
+                {% if savedCardMethods is not empty %}
+                    <optgroup label="{{ 'ebizcharge.checkout.savedCardGroup'|trans|sw_sanitize }}">
+                        {% for card in savedCardMethods %}
+                            <option value="{{ card.methodId }}"
+                                    data-method-type="card"
+                                    data-requires-card-code="{{ card.requiresCardCode ? '1' : '0' }}">
+                                {{ card.methodName ?: card.brand ?: card.displayType ?: 'Payment method' }}
+                                {{ card.masked }}
+                                {% if card.expiry %}
+                                    {{ 'ebizcharge.checkout.expiresShort'|trans({'%date%': card.expiry})|sw_sanitize }}
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </optgroup>
+                {% endif %}
+            </select>
+
+            <div class="ebiz-saved-card-checkout__code mt-2" data-ebiz-card-code-field>
+                <label class="form-label" for="ebizchargeCardCode">
+                    {{ 'ebizcharge.checkout.cardCodeLabel'|trans|sw_sanitize }}
+                </label>
+                <input class="form-control ebiz-saved-card-checkout__code-input"
+                       id="ebizchargeCardCode"
+                       name="ebizchargeCardCode"
+                       form="confirmOrderForm"
+                       inputmode="numeric"
+                       autocomplete="cc-csc"
+                       minlength="3"
+                       maxlength="4"
+                       pattern="[0-9]{3,4}"
+                       title="{{ 'ebizcharge.checkout.cardCodeTitle'|trans|sw_sanitize }}"
+                       data-ebiz-card-code-input>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

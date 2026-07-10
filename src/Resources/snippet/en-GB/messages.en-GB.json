@@ -5,32 +5,43 @@
       "cancelled": "The payment was cancelled before completion.",
       "technical": "The payment result could not be fully verified yet. Please check your order history or contact support."
     },
+    "checkout": {
+      "savedCardLabel": "Saved payment method",
+      "hostedFormOption": "Pay with a new payment method",
+      "savedAchGroup": "Pay with saved bank account",
+      "savedCardGroup": "Pay with saved card",
+      "cardCodeLabel": "Security code",
+      "cardCodeTitle": "Enter 3 or 4 digits.",
+      "expiresShort": "exp. %date%"
+    },
     "admin": {
       "connectionSuccess": "Connection test passed.",
       "connectionFailure": "Connection test failed."
     },
     "account": {
-      "menuTitle": "eBizCharge Saved Cards",
-      "title": "eBizCharge Saved Cards",
-      "intro": "Manage cards stored securely with eBizCharge.",
-      "addCard": "Add Card",
-      "refreshCards": "Refresh cards",
-      "empty": "You have no saved cards yet.",
+      "menuTitle": "EBizCharge Saved Payment Methods",
+      "title": "EBizCharge Saved Payment Methods",
+      "intro": "Manage your saved payment methods securely with EBizCharge.",
+      "addCard": "Add payment method",
+      "refreshCards": "Refresh payment methods",
+      "empty": "You have no saved payment methods yet.",
       "expires": "Expires",
       "defaultBadge": "Default",
       "setDefault": "Set as default",
+      "showBankAccounts": "Show bank accounts (%count%)",
+      "hideBankAccounts": "Hide bank accounts",
       "delete": "Remove",
-      "deleteConfirm": "Remove this saved card?",
-      "deleteMissing": "No card was selected to remove.",
-      "deleteSuccess": "The saved card was removed.",
-      "deleteFailed": "The card could not be removed. Please try again.",
-      "defaultMissing": "No card was selected.",
-      "defaultSuccess": "Default card updated.",
-      "defaultFailed": "Could not update the default card.",
-      "addSuccess": "Your card was saved successfully.",
-      "addIncomplete": "We could not confirm the new card yet. If you cancelled, no changes were made.",
-      "addSessionInvalid": "The add-card return could not be verified. Please try again.",
-      "addStartFailed": "The card form could not be opened. Please try again."
+      "deleteConfirm": "Remove this saved payment method?",
+      "deleteMissing": "No payment method was selected to remove.",
+      "deleteSuccess": "The saved payment method was removed.",
+      "deleteFailed": "The payment method could not be removed. Please try again.",
+      "defaultMissing": "No payment method was selected.",
+      "defaultSuccess": "Default payment method updated.",
+      "defaultFailed": "Could not update the default payment method.",
+      "addSuccess": "Your payment method was saved successfully.",
+      "addIncomplete": "We could not confirm the new payment method yet. If you cancelled, no changes were made.",
+      "addSessionInvalid": "The add-payment-method return could not be verified. Please try again.",
+      "addStartFailed": "The payment method form could not be opened. Please try again."
     }
   }
 }

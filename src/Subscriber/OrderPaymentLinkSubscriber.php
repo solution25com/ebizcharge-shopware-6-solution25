@@ -55,7 +55,7 @@ final class OrderPaymentLinkSubscriber implements EventSubscriberInterface
 
                 $this->paymentLinkService->createAndSend($orderTransactionId, $context);
             } catch (\Throwable $e) {
-                $this->logger->error('Could not create eBizCharge payment link.', [
+                $this->logger->error('Could not create EBizCharge payment link.', [
                     'orderTransactionId' => $orderTransactionId,
                     'orderId'            => $payload['orderId'],
                     'error'              => $e->getMessage(),

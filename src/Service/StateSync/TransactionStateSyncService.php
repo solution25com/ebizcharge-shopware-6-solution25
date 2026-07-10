@@ -53,7 +53,7 @@ final class TransactionStateSyncService
         } catch (IllegalTransitionException $exception) {
             $persistedState = $this->currentState($orderTransactionId, $context) ?? $currentState ?? $targetState;
 
-            $this->logger->warning('eBizCharge state transition raised an exception, continuing with audit-safe record update.', [
+            $this->logger->warning('EBizCharge state transition raised an exception, continuing with audit-safe record update.', [
                 'orderTransactionId' => $orderTransactionId,
                 'targetState' => $targetState,
                 'persistedState' => $persistedState,

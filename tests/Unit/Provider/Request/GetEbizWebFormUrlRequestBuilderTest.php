@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace EbizChargeShopware\Tests\Unit\Provider\Request;
 
@@ -12,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 
 final class GetEbizWebFormUrlRequestBuilderTest extends TestCase
 {
-    public function testBuildsHostedCardPayloadWithoutForbiddenFields(): void
+    public function testBuildsHostedPaymentMethodPayloadWithoutForbiddenFields(): void
     {
         $builder = new GetEbizWebFormUrlRequestBuilder(new ReturnUrlBuilder());
         $orderData = new CheckoutOrderData(
@@ -55,9 +57,15 @@ final class GetEbizWebFormUrlRequestBuilderTest extends TestCase
         $payload = $builder->build($orderData, $config, 'https://shop.test/payment/finalize-transaction');
 
         self::assertSame('Webform', $payload['ePaymentForm']['formType']);
-        self::assertSame('CC', $payload['ePaymentForm']['payByType']);
+        self::assertSame('CC,ACH', $payload['ePaymentForm']['payByType']);
         self::assertSame('Sale', $payload['ePaymentForm']['processingCommand']);
         self::assertSame('transaction-id', $payload['ePaymentForm']['transactionLookupKey']);
+        self::assertSame('ACME', $payload['ePaymentForm']['companyName']);
+        self::assertSame(5.0, $payload['ePaymentForm']['taxAmount']);
+        self::assertSame(5.0, $payload['ePaymentForm']['lineItems'][0]['taxAmount']);
+        self::assertSame(50.0, $payload['ePaymentForm']['lineItems'][0]['unitPrice']);
+        self::assertSame('ACME', $payload['ePaymentForm']['billingAddress']['companyName']);
+        self::assertSame('CA', $payload['ePaymentForm']['billingAddress']['state']);
         self::assertStringContainsString('ebizchargeResult=approved', $payload['ePaymentForm']['approvedURL']);
         self::assertArrayNotHasKey('currency', $payload['ePaymentForm']);
         self::assertArrayNotHasKey('allowPartialAuth', $payload['ePaymentForm']);

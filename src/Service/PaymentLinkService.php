@@ -109,7 +109,7 @@ final class PaymentLinkService
 
         if ($mailTemplate === null) {
             throw new \RuntimeException(
-                'eBizCharge payment link mail template not found. Run: bin/console database:migrate --all EbizChargeShopware'
+                'EBizCharge payment link mail template not found. Run: bin/console database:migrate --all EbizChargeShopware'
             );
         }
 
@@ -118,14 +118,14 @@ final class PaymentLinkService
         $subject      = $mailTemplate->getSubject();
 
         if ($contentHtml === null || $contentPlain === null || $subject === null) {
-            throw new \RuntimeException('eBizCharge payment link mail template has no content.');
+            throw new \RuntimeException('EBizCharge payment link mail template has no content.');
         }
 
         [$firstName, $lastName] = $this->splitName($orderData->customerFullName);
 
         $data = new DataBag();
         $data->set('recipients', [$orderData->customerEmail => $orderData->customerFullName]);
-        $data->set('senderName', $mailTemplate->getSenderName() ?? 'eBizCharge');
+        $data->set('senderName', $mailTemplate->getSenderName() ?? 'EBizCharge');
         $data->set('salesChannelId', $orderData->salesChannelId);
         $data->set('contentHtml', $contentHtml);
         $data->set('contentPlain', $contentPlain);

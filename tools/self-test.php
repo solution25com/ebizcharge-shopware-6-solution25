@@ -22,6 +22,7 @@ use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Connection\ConnectionTestService;
 use EbizChargeShopware\Service\Finalize\BrowserReturnParser;
 use EbizChargeShopware\Service\Finalize\FinalizationService;
+use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use EbizChargeShopware\Service\PaymentLinkService;
 use EbizChargeShopware\Service\StateSync\StateTransitionPolicy;
 use EbizChargeShopware\Service\StateSync\TransactionStateResolver;
@@ -193,6 +194,10 @@ function makeStateRepository(?string $currentState): EntityRepository
                 }
             };
         }
+
+        public function update(array $data, object $context): void
+        {
+        }
     };
 }
 
@@ -246,12 +251,12 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
     same(false, $repository->updated[1][0]['active'], 'Payment method deactivate should write active=false.');
 };
 
-$tests['builder-hosted-card-payload'] = static function (): void {
+$tests['builder-hosted-payment-method-payload'] = static function (): void {
     $builder = new GetEbizWebFormUrlRequestBuilder(new ReturnUrlBuilder());
     $payload = $builder->build(baseOrderData(), baseConfig(), 'https://shop.test/payment/finalize-transaction');
 
     same('Webform', $payload['ePaymentForm']['formType'], 'Hosted form type mismatch.');
-    same('CC', $payload['ePaymentForm']['payByType'], 'Pay-by type mismatch.');
+    same('CC,ACH', $payload['ePaymentForm']['payByType'], 'Pay-by type mismatch.');
     same('Sale', $payload['ePaymentForm']['processingCommand'], 'Processing command mismatch.');
     same('transaction-id', $payload['ePaymentForm']['transactionLookupKey'], 'Lookup key mismatch.');
     same('https://shop.test/payment/finalize-transaction', $payload['ePaymentForm']['approvedURL'], 'Approved URL mismatch.');
@@ -289,6 +294,27 @@ $tests['normalizer-extracts-hosted-url-and-payment'] = static function (): void 
     same('AuthOnly', $result->operationMode, 'Verified payment mode mismatch.');
     same('3177716774', $result->providerReference, 'Verified provider reference mismatch.');
     same('505998', $result->authorizationCode, 'Verified auth code mismatch.');
+};
+
+$tests['customer-vault-normalizes-card-and-ach-methods'] = static function (): void {
+    $reflection = new ReflectionClass(EbizChargeCustomerVaultService::class);
+    $service = $reflection->newInstanceWithoutConstructor();
+    $normalizeMethodType = $reflection->getMethod('normalizeMethodType');
+    $maskedPaymentAccount = $reflection->getMethod('maskedPaymentAccount');
+
+    $cardProfile = [
+        'MethodType' => 'CreditCard',
+        'CardNumber' => 'xxxx1111',
+    ];
+    $achProfile = [
+        'MethodType' => 'ACH',
+        'Account' => '123456789',
+    ];
+
+    same('card', $normalizeMethodType->invoke($service, $cardProfile), 'Card profile type mismatch.');
+    same('xxxx1111', $maskedPaymentAccount->invoke($service, $cardProfile, 'card'), 'Card profile mask mismatch.');
+    same('ach', $normalizeMethodType->invoke($service, $achProfile), 'ACH profile type mismatch.');
+    same('xxxx6789', $maskedPaymentAccount->invoke($service, $achProfile, 'ach'), 'ACH profile should display a masked account.');
 };
 
 $tests['rest-client-wraps-security-token-and-header'] = static function (): void {

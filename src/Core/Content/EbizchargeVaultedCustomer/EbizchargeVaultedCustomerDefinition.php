@@ -11,7 +11,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -45,7 +44,6 @@ final class EbizchargeVaultedCustomerDefinition extends EntityDefinition
             (new StringField('merchant_customer_id', 'merchantCustomerId'))->addFlags(new Required()),
             (new StringField('customer_internal_id', 'customerInternalId'))->addFlags(new Required()),
             new StringField('gateway_token', 'ebizCustomerToken'),
-            new LongTextField('saved_cards_json', 'savedCardsJson'),
             new StringField('default_method_id', 'defaultMethodId'),
             new CreatedAtField(),
             new UpdatedAtField(),

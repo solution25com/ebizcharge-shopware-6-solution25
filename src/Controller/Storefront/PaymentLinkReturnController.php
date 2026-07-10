@@ -60,7 +60,7 @@ final class PaymentLinkReturnController
                 return new RedirectResponse($this->router->generate('frontend.ebizcharge.payment-link.success'));
             }
         } catch (\Throwable $e) {
-            $this->logger->error('eBizCharge payment-link return error.', [
+            $this->logger->error('EBizCharge payment-link return error.', [
                 'transactionId' => $orderTransactionId,
                 'error'         => $e->getMessage(),
             ]);

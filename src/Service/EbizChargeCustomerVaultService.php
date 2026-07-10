@@ -10,6 +10,7 @@ use EbizChargeShopware\Provider\Client\ProviderClientInterface;
 use EbizChargeShopware\Provider\ProviderContract;
 use EbizChargeShopware\Provider\ProviderOperation;
 use EbizChargeShopware\Provider\Response\ResponseNormalizer;
+use EbizChargeShopware\Service\Checkout\OrderTransactionLoader;
 use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\PluginConfig;
@@ -28,7 +29,8 @@ final class EbizChargeCustomerVaultService
         private readonly EntityRepository $customerRepository,
         private readonly ProviderClientInterface $providerClient,
         private readonly PluginConfigProvider $configProvider,
-        private readonly ResponseNormalizer $responseNormalizer
+        private readonly ResponseNormalizer $responseNormalizer,
+        private readonly OrderTransactionLoader $orderTransactionLoader
     ) {
     }
 
@@ -102,18 +104,31 @@ final class EbizChargeCustomerVaultService
         return $newCustomerVault;
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function getCardsForDisplay(EbizchargeVaultedCustomerEntity $customerVault, Context $context): array
+    public function findVaultForCustomerId(string $customerId, string $salesChannelId, Context $context): ?EbizchargeVaultedCustomerEntity
     {
-        return $this->formatCardsForDisplay($this->fetchCards($customerVault, $context));
+        return $this->findVault($customerId, $salesChannelId, $context);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function fetchCards(EbizchargeVaultedCustomerEntity $customerVault, Context $context): array
+    public function getSavedPaymentMethodsForDisplay(EbizchargeVaultedCustomerEntity $customerVault, Context $context): array
+    {
+        return $this->formatSavedPaymentMethodsForDisplay($this->fetchSavedPaymentMethods($customerVault, $context));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getCardsForDisplay(EbizchargeVaultedCustomerEntity $customerVault, Context $context): array
+    {
+        return $this->getSavedPaymentMethodsForDisplay($customerVault, $context);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function fetchSavedPaymentMethods(EbizchargeVaultedCustomerEntity $customerVault, Context $context): array
     {
         $customerToken = (string) $customerVault->getEbizCustomerToken();
         if ($customerToken === '') {
@@ -130,7 +145,7 @@ final class EbizChargeCustomerVaultService
         );
 
         $profiles = $this->responseNormalizer->collectPaymentMethodProfiles($response['body']);
-        $cards = [];
+        $savedMethods = [];
         $defaultId = $customerVault->getDefaultMethodId();
         $defaultFound = false;
         foreach ($profiles as $profile) {
@@ -152,29 +167,34 @@ final class EbizChargeCustomerVaultService
                 continue;
             }
 
-            $masked = $profile['CardNumber'] ?? $profile['cardNumber'] ?? '';
-            $brand = $profile['CardType'] ?? $profile['cardType'] ?? '';
+            $methodType = $this->normalizeMethodType($profile);
+            $masked = $this->maskedPaymentAccount($profile, $methodType);
+            $brand = $methodType === 'ach'
+                ? ($profile['AccountType'] ?? $profile['accountType'] ?? 'Checking')
+                : $this->normalizeCardBrand($profile['CardType'] ?? $profile['cardType'] ?? 'Card');
             $expiry = $profile['CardExpiration'] ?? $profile['cardExpiration'] ?? '';
             $name = $profile['MethodName'] ?? $profile['methodName'] ?? '';
             $isDefault = $defaultId !== null && hash_equals($defaultId, $methodId);
             $defaultFound = $defaultFound || $isDefault;
 
-            $cards[] = [
+            $savedMethods[] = [
                 'methodId' => $methodId,
-                'masked' => is_scalar($masked) ? trim((string) $masked) : '',
+                'type' => $methodType,
+                'masked' => $masked,
                 'brand' => is_scalar($brand) ? trim((string) $brand) : '',
-                'expiry' => is_scalar($expiry) ? trim((string) $expiry) : '',
+                'expiry' => $methodType === 'card' && is_scalar($expiry) ? trim((string) $expiry) : '',
                 'name' => is_scalar($name) ? trim((string) $name) : '',
+                'requiresCardCode' => $methodType === 'card',
                 'isDefault' => $isDefault,
             ];
         }
 
-        if ($cards !== [] && ($defaultId === null || !$defaultFound)) {
-            $cards[0]['isDefault'] = true;
-            $defaultId = (string) $cards[0]['methodId'];
+        if ($savedMethods !== [] && ($defaultId === null || !$defaultFound)) {
+            $savedMethods[0]['isDefault'] = true;
+            $defaultId = (string) $savedMethods[0]['methodId'];
         }
 
-        if ($cards === []) {
+        if ($savedMethods === []) {
             $defaultId = null;
         }
 
@@ -188,29 +208,34 @@ final class EbizChargeCustomerVaultService
             $customerVault->setDefaultMethodId($defaultId);
         }
 
-        return $cards;
+        return $savedMethods;
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    private function formatCardsForDisplay(array $cards): array
+    private function formatSavedPaymentMethodsForDisplay(array $savedMethods): array
     {
-        $formattedCards = [];
-        foreach ($cards as $card) {
-            $formattedCards[] = [
-                'id' => (string) ($card['methodId'] ?? ''),
-                'methodId' => (string) ($card['methodId'] ?? ''),
-                'ebizMethodId' => (string) ($card['methodId'] ?? ''),
-                'cardMasked' => (string) ($card['masked'] ?? ''),
-                'cardBrand' => (string) ($card['brand'] ?? ''),
-                'cardExpiry' => (string) ($card['expiry'] ?? ''),
-                'methodName' => (string) ($card['name'] ?? ''),
-                'isDefault' => !empty($card['isDefault']),
+        $formattedPaymentMethods = [];
+        foreach ($savedMethods as $method) {
+            $type = (string) ($method['type'] ?? 'card');
+            $brand = (string) ($method['brand'] ?? '');
+
+            $formattedPaymentMethods[] = [
+                'id' => (string) ($method['methodId'] ?? ''),
+                'methodId' => (string) ($method['methodId'] ?? ''),
+                'type' => $type,
+                'displayType' => $type === 'ach' ? 'Bank account' : 'Card',
+                'masked' => (string) ($method['masked'] ?? ''),
+                'brand' => $brand,
+                'expiry' => (string) ($method['expiry'] ?? ''),
+                'methodName' => (string) ($method['name'] ?? ''),
+                'requiresCardCode' => !empty($method['requiresCardCode']),
+                'isDefault' => !empty($method['isDefault']),
             ];
         }
 
-        return $formattedCards;
+        return $formattedPaymentMethods;
     }
 
     public function deleteSavedMethod(
@@ -263,7 +288,7 @@ final class EbizChargeCustomerVaultService
         $customerVault->setDefaultMethodId($methodId);
     }
 
-    public function getAccountAddCardHostedUrl(SalesChannelContext $context): string
+    public function getAccountAddPaymentMethodHostedUrl(SalesChannelContext $context): string
     {
         $customer = $context->getCustomer();
         if ($customer === null || $customer->getGuest()) {
@@ -273,13 +298,13 @@ final class EbizChargeCustomerVaultService
         $this->ensureVault($context);
         $config = $this->configProvider->get($context->getSalesChannelId());
         $config->assertComplete();
-        $payload = $this->createHostedAddCardPayload($context);
+        $payload = $this->createHostedAddPaymentMethodPayload($context);
         $response = $this->providerClient->send(ProviderOperation::GET_WEBFORM_URL, $payload, $config);
 
         return $this->responseNormalizer->extractHostedRedirectUrl($response['body']);
     }
 
-    private function createHostedAddCardPayload(SalesChannelContext $context): array
+    private function createHostedAddPaymentMethodPayload(SalesChannelContext $context): array
     {
         $customer = $context->getCustomer();
         if ($customer === null || $customer->getGuest()) {
@@ -290,11 +315,11 @@ final class EbizChargeCustomerVaultService
         $billingData = new AddressData(
             $billing?->getFirstName() ?? $customer->getFirstName(),
             $billing?->getLastName() ?? $customer->getLastName(),
-            $billing?->getCompany(),
+            $this->orderTransactionLoader->companyName($billing?->getCompany(), $billing?->getFirstName() ?? $customer->getFirstName(), $billing?->getLastName() ?? $customer->getLastName()),
             $billing?->getStreet() ?? 'n/a',
             null,
             $billing?->getCity() ?? 'n/a',
-            $this->normalizeStateCode($billing?->getCountryState()?->getShortCode()),
+            $this->orderTransactionLoader->requiredStateCode($this->normalizeStateCode($billing?->getCountryState()?->getShortCode())),
             $billing?->getZipcode() ?? '00000',
             $billing?->getCountry()?->getIso() ?? 'US'
         );
@@ -314,9 +339,70 @@ final class EbizChargeCustomerVaultService
                 'customerId' => $customer->getId(),
                 'custFullName' => trim(sprintf('%s %s', $customer->getFirstName(), $customer->getLastName())),
                 'billingAddress' => $billingData->toProviderArray(),
-                'payByType' => ProviderContract::PAY_BY_TYPE_CREDIT_CARD,
+                'payByType' => ProviderContract::PAY_BY_TYPE_CREDIT_CARD_AND_ACH,
             ],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function normalizeMethodType(array $profile): string
+    {
+        $rawType = strtolower(trim((string) (
+            $profile['MethodType']
+            ?? $profile['methodType']
+            ?? ''
+        )));
+
+        if (str_contains($rawType, 'ach') || str_contains($rawType, 'check')) {
+            return 'ach';
+        }
+
+        return 'card';
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function maskedPaymentAccount(array $profile, string $methodType): string
+    {
+        if ($methodType === 'ach') {
+            $account = $profile['Account']
+                ?? $profile['account']
+                ?? '';
+
+            return $this->maskAccount(is_scalar($account) ? trim((string) $account) : '');
+        }
+
+        $cardNumber = $profile['CardNumber'] ?? $profile['cardNumber'] ?? '';
+
+        return is_scalar($cardNumber) ? trim((string) $cardNumber) : '';
+    }
+
+    private function maskAccount(string $value): string
+    {
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+
+        if ($digits === '') {
+            return 'Bank account';
+        }
+
+        return 'xxxx' . substr($digits, -4);
+    }
+
+    private function normalizeCardBrand(mixed $value): string
+    {
+        $brand = is_scalar($value) ? trim((string) $value) : '';
+
+        return match (strtoupper($brand)) {
+            'V' => 'Visa',
+            'M', 'MC' => 'Mastercard',
+            'A', 'AMEX' => 'American Express',
+            'D', 'DISC' => 'Discover',
+            '' => 'Card',
+            default => $brand,
+        };
     }
 
     private function findVault(string $customerId, string $salesChannelId, Context $context): ?EbizchargeVaultedCustomerEntity
@@ -334,6 +420,7 @@ final class EbizChargeCustomerVaultService
     private function loadCustomerWithBilling(string $customerId, Context $context): CustomerEntity
     {
         $criteria = (new Criteria([$customerId]))->addAssociation('defaultBillingAddress.country');
+        $criteria->addAssociation('defaultBillingAddress.countryState');
         $customer = $this->customerRepository->search($criteria, $context)->first();
         if (!$customer instanceof CustomerEntity) {
             throw new \RuntimeException('Customer not found.');
@@ -372,6 +459,7 @@ final class EbizChargeCustomerVaultService
                     'customerId' => $merchantCustomerId,
                     'firstName' => (string) $customer->getFirstName(),
                     'lastName' => (string) $customer->getLastName(),
+                    'companyName' => $billing->companyName,
                     'email' => (string) $customer->getEmail(),
                     'billingAddress' => $billing->toProviderArray(),
                 ],
@@ -394,11 +482,11 @@ final class EbizChargeCustomerVaultService
             return new AddressData(
                 (string) $customer->getFirstName(),
                 (string) $customer->getLastName(),
-                null,
+                $this->orderTransactionLoader->companyName(null, $customer->getFirstName(), $customer->getLastName()),
                 'n/a',
                 null,
                 'n/a',
-                null,
+                'NA',
                 '00000',
                 'US'
             );
@@ -407,11 +495,11 @@ final class EbizChargeCustomerVaultService
         return new AddressData(
             $billing->getFirstName(),
             $billing->getLastName(),
-            $billing->getCompany(),
+            $this->orderTransactionLoader->companyName($billing->getCompany(), $billing->getFirstName(), $billing->getLastName()),
             $billing->getStreet(),
             null,
             $billing->getCity(),
-            $this->normalizeStateCode($billing->getCountryState()?->getShortCode()),
+            $this->orderTransactionLoader->requiredStateCode($this->normalizeStateCode($billing->getCountryState()?->getShortCode())),
             (string) $billing->getZipcode(),
             $billing->getCountry()?->getIso()
         );

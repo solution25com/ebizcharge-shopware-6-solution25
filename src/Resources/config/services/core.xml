@@ -40,6 +40,7 @@
             <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
             <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
             <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
         </service>
 
         <service id="EbizChargeShopware\Provider\Client\SymfonyHttpProviderTransport">
@@ -119,8 +120,12 @@
             <argument type="service" id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry"/>
             <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
             <argument type="service" id="EbizChargeShopware\Service\Checkout\HostedCheckoutService"/>
+            <argument type="service" id="EbizChargeShopware\Service\EbizChargeCustomerVaultService"/>
+            <argument type="service" id="EbizChargeShopware\Service\EbizChargeApiClient"/>
             <argument type="service" id="EbizChargeShopware\Service\Finalize\FinalizationService"/>
             <argument type="service" id="EbizChargeShopware\Service\StateSync\TransactionStateSyncService"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="EbizChargeShopware.logger"/>
             <tag name="shopware.payment.method"/>
         </service>
@@ -130,6 +135,8 @@
         </service>
 
         <service id="EbizChargeShopware\Subscriber\StorefrontPaymentMethodSubscriber">
+            <argument type="service" id="EbizChargeShopware\Service\EbizChargeCustomerVaultService"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

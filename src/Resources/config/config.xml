@@ -26,7 +26,7 @@
         <input-field type="url">
             <name>sandboxBaseUrl</name>
             <label>Sandbox base URL</label>
-            <helpText>Confirm this value with eBizCharge. The supplied provider materials point at production/v2 even for sandbox credentials.</helpText>
+            <helpText>Confirm this value with EBizCharge. The supplied provider materials point at production/v2 even for sandbox credentials.</helpText>
             <required>true</required>
             <defaultValue>https://restapi1.ebizcharge.net/production/v2</defaultValue>
         </input-field>
@@ -128,7 +128,7 @@
         <input-field type="bool">
             <name>enforceAvsCheck</name>
             <label>Enforce address verification check</label>
-            <helpText>When enabled, approved card payments are accepted only when eBizCharge returns a full AVS address and ZIP match.</helpText>
+            <helpText>When enabled, approved card payments are accepted only when EBizCharge returns a full AVS address and ZIP match.</helpText>
             <defaultValue>false</defaultValue>
         </input-field>
 

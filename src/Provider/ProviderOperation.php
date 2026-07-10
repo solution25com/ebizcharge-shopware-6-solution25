@@ -10,6 +10,7 @@ enum ProviderOperation: string
     case GET_WEBFORM_URL = 'GetEbizWebFormURL';
     case GET_TRANSACTION_DETAILS = 'GetTransactionDetails';
     case SEARCH_RECEIVED_PAYMENTS = 'SearchEbizWebFormReceivedPayments';
+    case MARK_WEBFORM_PAYMENT_APPLIED = 'MarkEbizWebFormPaymentAsApplied';
     case RUN_TRANSACTION = 'runTransaction';
     case ADD_CUSTOMER = 'AddCustomer';
     case SEARCH_CUSTOMERS = 'SearchCustomers';
@@ -26,6 +27,7 @@ enum ProviderOperation: string
             self::GET_WEBFORM_URL => 'getEbizWebFormURL',
             self::GET_TRANSACTION_DETAILS => 'getTransactionDetails',
             self::SEARCH_RECEIVED_PAYMENTS => 'searchEbizWebFormReceivedPayments',
+            self::MARK_WEBFORM_PAYMENT_APPLIED => 'markEbizWebFormPaymentAsApplied',
             self::RUN_TRANSACTION => 'runTransaction',
             self::ADD_CUSTOMER => 'addCustomer',
             self::SEARCH_CUSTOMERS => 'searchCustomers',

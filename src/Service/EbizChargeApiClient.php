@@ -11,6 +11,7 @@ use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\PluginConfig;
+use EbizChargeShopware\ValueObject\ProviderOperationResult;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 
@@ -103,6 +104,103 @@ final class EbizChargeApiClient
     }
 
     /**
+     * @return array{operationResult: ProviderOperationResult, verificationResponse: array<string, mixed>}
+     */
+    public function chargeSavedCustomerMethod(
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        string $customerToken,
+        string $paymentMethodId,
+        ?string $cardCode
+    ): array {
+        $transactionPayload = [
+            'ignoreDuplicate' => false,
+            'details' => $this->buildTransactionDetails($orderData, $config, round($orderData->amountDue, 2)),
+            'lineItems' => $this->buildLineItems($orderData),
+            'command' => $config->processingCommand(),
+        ];
+
+        if ($cardCode !== null && $cardCode !== '') {
+            $transactionPayload['cardCode'] = $cardCode;
+        }
+
+        $response = $this->client->send(ProviderOperation::RUN_CUSTOMER_TRANSACTION, [
+            'custNum' => $customerToken,
+            'paymentMethodID' => $paymentMethodId,
+            'tran' => $transactionPayload,
+        ], $config);
+
+        $result = $response['body']['runCustomerTransactionResponse']['runCustomerTransactionResult']
+            ?? $response['body']['RunCustomerTransactionResponse']['RunCustomerTransactionResult']
+            ?? $response['body']['runCustomerTransactionResult']
+            ?? [];
+
+        if (!\is_array($result)) {
+            throw new \RuntimeException('EBizCharge saved-card transaction returned an invalid response.');
+        }
+
+        $resultText = strtolower(trim((string) ($result['result'] ?? $result['Result'] ?? '')));
+        $resultCode = strtoupper(trim((string) ($result['resultCode'] ?? $result['ResultCode'] ?? '')));
+        $supportMessage = trim((string) ($result['error'] ?? $result['Error'] ?? $result['result'] ?? $result['Result'] ?? ''));
+        if ($supportMessage === '') {
+            $supportMessage = 'EBizCharge saved-card transaction completed.';
+        }
+
+        if ($resultCode === 'A' || str_contains($resultText, 'approved') || str_contains($resultText, 'success')) {
+            $providerReference = trim((string) ($result['refNum'] ?? $result['RefNum'] ?? ''));
+            $authorizationCode = trim((string) ($result['authCode'] ?? $result['AuthCode'] ?? ''));
+
+            $operationResult = ProviderOperationResult::approved(
+                $config->processingCommand(),
+                $providerReference !== '' ? $providerReference : null,
+                $authorizationCode !== '' ? $authorizationCode : null,
+                $supportMessage,
+                $paymentMethodId,
+                $config->processingCommand()
+            );
+
+            return [
+                'operationResult' => $operationResult,
+                'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $config, $paymentMethodId),
+            ];
+        }
+
+        return [
+            'operationResult' => ProviderOperationResult::declined(
+                $config->processingCommand(),
+                $supportMessage,
+                true,
+                'saved_card_declined'
+            ),
+            'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $config, $paymentMethodId),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSavedCardVerificationResponse(array $result, PluginConfig $config, string $paymentMethodId): array
+    {
+        return [
+            'referenceNumber' => $result['refNum'] ?? $result['RefNum'] ?? null,
+            'amount' => $result['authAmount'] ?? $result['AuthAmount'] ?? null,
+            'status' => $result['status'] ?? $result['Status'] ?? null,
+            'statusCode' => $result['statusCode'] ?? $result['StatusCode'] ?? null,
+            'result' => $result['result'] ?? $result['Result'] ?? null,
+            'resultCode' => $result['resultCode'] ?? $result['ResultCode'] ?? null,
+            'type' => $config->processingCommand(),
+            'paymentMethodId' => $paymentMethodId,
+            'authCode' => $result['authCode'] ?? $result['AuthCode'] ?? null,
+            'cardCodeResultCode' => $result['cardCodeResultCode'] ?? $result['CardCodeResultCode'] ?? null,
+            'cardCodeResult' => $result['cardCodeResult'] ?? $result['CardCodeResult'] ?? null,
+            'avsResultCode' => $result['avsResultCode'] ?? $result['AvsResultCode'] ?? null,
+            'avsResult' => $result['avsResult'] ?? $result['AvsResult'] ?? null,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     private function loadRecord(string $orderTransactionId, string $operation, Context $context): ?array
@@ -116,7 +214,7 @@ final class EbizChargeApiClient
         $refNum = (string) ($record['provider_ref_num'] ?? '');
 
         if ($refNum === '') {
-            $this->logger->error(sprintf('eBizCharge %s skipped: no reference number in stored record.', $operation), [
+            $this->logger->error(sprintf('EBizCharge %s skipped: no reference number in stored record.', $operation), [
                 'orderTransactionId' => $orderTransactionId,
             ]);
 
@@ -150,7 +248,7 @@ final class EbizChargeApiClient
             $returnedRefNum = (string) ($result['refNum'] ?? $originalRefNum);
 
             if (str_contains($resultStatus, 'approved') || str_contains($resultStatus, 'success')) {
-                $this->logger->info(sprintf('eBizCharge %s succeeded.', $command), [
+                $this->logger->info(sprintf('EBizCharge %s succeeded.', $command), [
                     'orderTransactionId' => $orderTransactionId,
                     'refNum' => $returnedRefNum,
                 ]);
@@ -161,22 +259,22 @@ final class EbizChargeApiClient
                     'last_sync_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
                 ], $context);
             } else {
-                $this->logger->error(sprintf('eBizCharge %s returned a non-approval result.', $command), [
+                $this->logger->error(sprintf('EBizCharge %s returned a non-approval result.', $command), [
                     'orderTransactionId' => $orderTransactionId,
                     'refNum' => $originalRefNum,
                     'result' => $resultStatus,
                 ]);
 
-                throw new \RuntimeException(sprintf('eBizCharge %s was not approved: %s', $command, $resultStatus));
+                throw new \RuntimeException(sprintf('EBizCharge %s was not approved: %s', $command, $resultStatus));
             }
         } catch (\Throwable $exception) {
-            $this->logger->error(sprintf('eBizCharge %s request failed.', $command), [
+            $this->logger->error(sprintf('EBizCharge %s request failed.', $command), [
                 'orderTransactionId' => $orderTransactionId,
                 'refNum' => $originalRefNum,
                 'message' => $exception->getMessage(),
             ]);
 
-            throw new \RuntimeException(sprintf('eBizCharge %s request failed: %s', $command, $exception->getMessage()), 0, $exception);
+            throw new \RuntimeException(sprintf('EBizCharge %s request failed: %s', $command, $exception->getMessage()), 0, $exception);
         }
     }
 

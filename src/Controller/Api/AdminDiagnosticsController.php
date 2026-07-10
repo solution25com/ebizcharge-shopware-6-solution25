@@ -58,7 +58,7 @@ final class AdminDiagnosticsController
         try {
             $this->paymentLinkService->resend($orderTransactionId, $context);
         } catch (\Throwable $e) {
-            $this->logger->error('eBizCharge payment link re-send failed.', [
+            $this->logger->error('EBizCharge payment link re-send failed.', [
                 'orderTransactionId' => $orderTransactionId,
                 'error' => $e->getMessage(),
             ]);

@@ -5,32 +5,43 @@
       "cancelled": "Die Zahlung wurde vor dem Abschluss abgebrochen.",
       "technical": "Das Zahlungsergebnis konnte noch nicht vollstandig verifiziert werden. Bitte prufen Sie Ihre Bestellhistorie oder kontaktieren Sie den Support."
     },
+    "checkout": {
+      "savedCardLabel": "Gespeicherte Zahlungsmethode",
+      "hostedFormOption": "Mit neuer Zahlungsmethode zahlen",
+      "savedAchGroup": "Mit gespeichertem Bankkonto zahlen",
+      "savedCardGroup": "Mit gespeicherter Karte zahlen",
+      "cardCodeLabel": "Sicherheitscode",
+      "cardCodeTitle": "Geben Sie 3 oder 4 Ziffern ein.",
+      "expiresShort": "gultig bis %date%"
+    },
     "admin": {
       "connectionSuccess": "Verbindungstest erfolgreich.",
       "connectionFailure": "Verbindungstest fehlgeschlagen."
     },
     "account": {
-      "menuTitle": "eBizCharge gespeicherte Karten",
-      "title": "eBizCharge gespeicherte Karten",
-      "intro": "Verwalten Sie bei eBizCharge gespeicherte Karten.",
-      "addCard": "Karte hinzufugen",
-      "refreshCards": "Karten aktualisieren",
-      "empty": "Sie haben noch keine gespeicherten Karten.",
+      "menuTitle": "EBizCharge gespeicherte Zahlungsmethoden",
+      "title": "EBizCharge gespeicherte Zahlungsmethoden",
+      "intro": "Verwalten Sie Ihre gespeicherten Zahlungsmethoden sicher mit EBizCharge.",
+      "addCard": "Zahlungsmethode hinzufugen",
+      "refreshCards": "Zahlungsmethoden aktualisieren",
+      "empty": "Sie haben noch keine gespeicherten Zahlungsmethoden.",
       "expires": "Gultig bis",
       "defaultBadge": "Standard",
       "setDefault": "Als Standard setzen",
+      "showBankAccounts": "Bankkonten anzeigen (%count%)",
+      "hideBankAccounts": "Bankkonten ausblenden",
       "delete": "Entfernen",
-      "deleteConfirm": "Diese gespeicherte Karte entfernen?",
-      "deleteMissing": "Keine Karte zum Entfernen ausgewahlt.",
-      "deleteSuccess": "Die gespeicherte Karte wurde entfernt.",
-      "deleteFailed": "Die Karte konnte nicht entfernt werden. Bitte erneut versuchen.",
-      "defaultMissing": "Keine Karte ausgewahlt.",
-      "defaultSuccess": "Standardkarte aktualisiert.",
-      "defaultFailed": "Standardkarte konnte nicht aktualisiert werden.",
-      "addSuccess": "Ihre Karte wurde erfolgreich gespeichert.",
-      "addIncomplete": "Die neue Karte konnte noch nicht bestatigt werden. Bei Abbruch wurden keine Anderungen vorgenommen.",
-      "addSessionInvalid": "Die Ruckkehr vom Kartenformular konnte nicht verifiziert werden. Bitte erneut versuchen.",
-      "addStartFailed": "Das Kartenformular konnte nicht geoffnet werden. Bitte erneut versuchen."
+      "deleteConfirm": "Diese gespeicherte Zahlungsmethode entfernen?",
+      "deleteMissing": "Keine Zahlungsmethode zum Entfernen ausgewahlt.",
+      "deleteSuccess": "Die gespeicherte Zahlungsmethode wurde entfernt.",
+      "deleteFailed": "Die Zahlungsmethode konnte nicht entfernt werden. Bitte erneut versuchen.",
+      "defaultMissing": "Keine Zahlungsmethode ausgewahlt.",
+      "defaultSuccess": "Standard-Zahlungsmethode aktualisiert.",
+      "defaultFailed": "Standard-Zahlungsmethode konnte nicht aktualisiert werden.",
+      "addSuccess": "Ihre Zahlungsmethode wurde erfolgreich gespeichert.",
+      "addIncomplete": "Die neue Zahlungsmethode konnte noch nicht bestatigt werden. Bei Abbruch wurden keine Anderungen vorgenommen.",
+      "addSessionInvalid": "Die Ruckkehr vom Zahlungsmethodenformular konnte nicht verifiziert werden. Bitte erneut versuchen.",
+      "addStartFailed": "Das Zahlungsmethodenformular konnte nicht geoffnet werden. Bitte erneut versuchen."
     }
   }
 }

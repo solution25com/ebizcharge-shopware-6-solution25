@@ -21,8 +21,6 @@ class EbizchargeVaultedCustomerEntity extends Entity
 
     protected ?string $ebizCustomerToken = null;
 
-    protected ?string $savedCardsJson = null;
-
     protected ?string $defaultMethodId = null;
 
     public function getCustomerId(): string
@@ -73,16 +71,6 @@ class EbizchargeVaultedCustomerEntity extends Entity
     public function setEbizCustomerToken(?string $ebizCustomerToken): void
     {
         $this->ebizCustomerToken = $ebizCustomerToken;
-    }
-
-    public function getSavedCardsJson(): ?string
-    {
-        return $this->savedCardsJson;
-    }
-
-    public function setSavedCardsJson(?string $savedCardsJson): void
-    {
-        $this->savedCardsJson = $savedCardsJson;
     }
 
     public function getDefaultMethodId(): ?string

@@ -41,7 +41,7 @@ final class RestProviderClient implements ProviderClientInterface
         $maxAttempts = 1 + $config->retryCount();
 
         for ($attempt = 1; $attempt <= $maxAttempts; ++$attempt) {
-            $this->logger->info('Dispatching eBizCharge request', [
+            $this->logger->info('Dispatching EBizCharge request', [
                 'operation' => $operation->value,
                 'environment' => $config->environmentMode(),
                 'url' => $url,
@@ -53,7 +53,7 @@ final class RestProviderClient implements ProviderClientInterface
                 $response = $this->transport->send($url, $headers, $requestBody, $config->connectionTimeoutSeconds());
 
                 if ($response['statusCode'] >= 500 && $attempt < $maxAttempts) {
-                    $this->logger->warning('Retrying eBizCharge request after provider 5xx response.', [
+                    $this->logger->warning('Retrying EBizCharge request after provider 5xx response.', [
                         'operation' => $operation->value,
                         'statusCode' => $response['statusCode'],
                         'attempt' => $attempt,
@@ -64,7 +64,7 @@ final class RestProviderClient implements ProviderClientInterface
 
                 if ($response['statusCode'] >= 400) {
                     throw new ProviderCommunicationException(
-                        sprintf('eBizCharge %s request failed: HTTP %d returned by provider.', $operation->value, $response['statusCode']),
+                        sprintf('EBizCharge %s request failed: HTTP %d returned by provider.', $operation->value, $response['statusCode']),
                         $response['statusCode']
                     );
                 }
@@ -75,7 +75,7 @@ final class RestProviderClient implements ProviderClientInterface
                     throw $exception;
                 }
 
-                $this->logger->warning('Retrying eBizCharge request after transport failure.', [
+                $this->logger->warning('Retrying EBizCharge request after transport failure.', [
                     'operation' => $operation->value,
                     'attempt' => $attempt,
                     'message' => $exception->getMessage(),

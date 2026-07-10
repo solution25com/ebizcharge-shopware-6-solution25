@@ -37,7 +37,7 @@ cp "$ROOT_DIR/composer.json" "$STAGE_DIR/"
 cp "$ROOT_DIR/README.md" "$STAGE_DIR/"
 cp "$ROOT_DIR/CHANGELOG.md" "$STAGE_DIR/"
 cp -R "$ROOT_DIR/src" "$STAGE_DIR/"
-rm -rf "$STAGE_DIR/src/Resources/app"
+rm -rf "$STAGE_DIR/src/Resources/app/administration"
 
 rm -f "$ARCHIVE_PATH"
 

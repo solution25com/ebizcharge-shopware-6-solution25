@@ -24,8 +24,8 @@ final class PaymentMethodInstaller
 
         $payload = [
             'handlerIdentifier' => CreditCardPaymentHandler::class,
-            'name' => 'eBizCharge Credit Card',
-            'description' => 'Hosted eBizCharge REST checkout for new credit-card payments.',
+            'name' => 'EBizCharge Hosted Payment',
+            'description' => "Complete your payment through EBizCharge's secure checkout.",
             'afterOrderEnabled' => true,
             'pluginId' => $pluginId,
             'technicalName' => EbizChargeShopware::CREDIT_CARD_TECHNICAL_NAME,
@@ -48,8 +48,8 @@ final class PaymentMethodInstaller
 
         $payload = [
             'handlerIdentifier' => PayByLinkPaymentHandler::class,
-            'name'              => 'eBizCharge Pay by Link',
-            'description'       => 'Admin sends a hosted eBizCharge payment link to the customer by email.',
+            'name'              => 'EBizCharge Pay by Link',
+            'description'       => 'Admin sends a hosted EBizCharge payment link to the customer by email.',
             'afterOrderEnabled' => false,
             'pluginId'          => $pluginId,
             'technicalName'     => EbizChargeShopware::PAY_BY_LINK_TECHNICAL_NAME,

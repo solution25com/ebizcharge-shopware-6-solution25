@@ -8,6 +8,6 @@ final class ProviderCommunicationException extends \RuntimeException
 {
     public static function requestFailed(string $operation, string $message, ?\Throwable $previous = null): self
     {
-        return new self(sprintf('eBizCharge %s request failed: %s', $operation, $message), 0, $previous);
+        return new self(sprintf('EBizCharge %s request failed: %s', $operation, $message), 0, $previous);
     }
 }

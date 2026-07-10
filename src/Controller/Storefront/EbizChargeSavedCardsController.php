@@ -33,18 +33,18 @@ final class EbizChargeSavedCardsController extends StorefrontController
         }
 
         $customerVault = $this->customerVaultService->ensureVault($context);
-        $savedCards = $this->customerVaultService->getCardsForDisplay($customerVault, $context->getContext());
+        $savedPaymentMethods = $this->customerVaultService->getSavedPaymentMethodsForDisplay($customerVault, $context->getContext());
         $addCardUrl = null;
         if ((string) $request->query->get('addCard', '') === '1') {
             try {
-                $addCardUrl = $this->customerVaultService->getAccountAddCardHostedUrl($context);
+                $addCardUrl = $this->customerVaultService->getAccountAddPaymentMethodHostedUrl($context);
             } catch (\Throwable) {
                 $this->addFlash('danger', $this->trans('ebizcharge.account.addStartFailed'));
             }
         }
 
         return $this->renderStorefront('@EbizChargeShopware/storefront/page/account/ebizcharge-saved-cards.html.twig', [
-            'savedCards' => $savedCards,
+            'savedPaymentMethods' => $savedPaymentMethods,
             'addCardUrl' => $addCardUrl,
         ]);
     }

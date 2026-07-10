@@ -52,7 +52,7 @@ final class ConnectionTestService
             $success = false;
             $message = 'Unexpected connection-test failure.';
             $failureCategory = 'unexpected';
-            $this->logger->error('Unexpected eBizCharge connection-test failure.', [
+            $this->logger->error('Unexpected EBizCharge connection-test failure.', [
                 'environment' => $config->environmentMode(),
                 'message' => $exception->getMessage(),
             ]);

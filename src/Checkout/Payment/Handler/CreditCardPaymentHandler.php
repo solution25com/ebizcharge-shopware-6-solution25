@@ -6,18 +6,28 @@ namespace EbizChargeShopware\Checkout\Payment\Handler;
 
 use EbizChargeShopware\Service\Checkout\HostedCheckoutService;
 use EbizChargeShopware\Service\Checkout\OrderTransactionLoader;
+use EbizChargeShopware\Service\EbizChargeApiClient;
+use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
 use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Finalize\FinalizationService;
 use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
+use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\Struct\CheckoutValidationStruct;
+use EbizChargeShopware\Provider\ProviderContract;
+use EbizChargeShopware\ValueObject\CheckoutOrderData;
+use EbizChargeShopware\ValueObject\PluginConfig;
+use EbizChargeShopware\ValueObject\ProviderOperationResult;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -31,8 +41,12 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
         private readonly ConnectionHealthRegistry $connectionHealthRegistry,
         private readonly OrderTransactionLoader $orderTransactionLoader,
         private readonly HostedCheckoutService $hostedCheckoutService,
+        private readonly EbizChargeCustomerVaultService $customerVaultService,
+        private readonly EbizChargeApiClient $apiClient,
         private readonly FinalizationService $finalizationService,
         private readonly TransactionStateSyncService $transactionStateSyncService,
+        private readonly TransactionRecordStoreInterface $transactionRecordStore,
+        private readonly EntityRepository $orderTransactionRepository,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -56,7 +70,7 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
         PaymentTransactionStruct $transaction,
         Context $context,
         ?Struct $validateStruct
-    ): RedirectResponse {
+    ): ?RedirectResponse {
         $orderData = $this->orderTransactionLoader->load($transaction->getOrderTransactionId(), $context);
         $config = $this->pluginConfigProvider->get($orderData->salesChannelId);
         $config->assertComplete();
@@ -73,8 +87,26 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
             throw PaymentException::asyncProcessInterrupted($transaction->getOrderTransactionId(), 'Missing Shopware return URL.');
         }
 
+        $savedMethodId = $this->selectedSavedMethodId($request);
+        if ($savedMethodId !== null) {
+            $savedCardResult = $this->chargeSavedMethod($request, $savedMethodId, $orderData, $config, $context);
+            $result = $savedCardResult['operationResult'];
+            $this->storeVerificationResponse(
+                $transaction->getOrderTransactionId(),
+                $savedCardResult['verificationResponse'],
+                $context
+            );
+            $this->transactionStateSyncService->apply($transaction->getOrderTransactionId(), $result, $context);
+
+            if ($result->outcome !== ProviderOperationResult::OUTCOME_APPROVED) {
+                throw PaymentException::asyncProcessInterrupted($transaction->getOrderTransactionId(), $result->supportMessage);
+            }
+
+            return null;
+        }
+
         $savePaymentMethod = false;
-        $showSavedPaymentMethods = !$orderData->guest && $orderData->customerId !== null;
+        $showSavedPaymentMethods = false;
 
         $redirect = $this->hostedCheckoutService->start($orderData, $config, $transaction->getReturnUrl(), $context, $savePaymentMethod, $showSavedPaymentMethods);
 
@@ -89,12 +121,124 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
             $context
         );
 
-        $this->logger->info('Redirecting shopper to hosted eBizCharge webform.', [
+        $this->logger->info('Redirecting shopper to hosted EBizCharge webform.', [
             'orderTransactionId' => $transaction->getOrderTransactionId(),
             'mode' => $redirect->mode,
         ]);
 
         return new RedirectResponse($redirect->redirectUrl);
+    }
+
+    /**
+     * @return array{operationResult: ProviderOperationResult, verificationResponse: array<string, mixed>}
+     */
+    private function chargeSavedMethod(
+        Request $request,
+        string $savedMethodId,
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        Context $context
+    ): array {
+        if ($orderData->guest || $orderData->customerId === null) {
+            throw PaymentException::asyncProcessInterrupted($orderData->orderTransactionId, 'Saved-payment-method checkout requires a registered customer.');
+        }
+
+        $customerVault = $this->customerVaultService->findVaultForCustomerId($orderData->customerId, $orderData->salesChannelId, $context);
+        if ($customerVault === null || $customerVault->getEbizCustomerToken() === null || $customerVault->getEbizCustomerToken() === '') {
+            throw PaymentException::asyncProcessInterrupted($orderData->orderTransactionId, 'No EBizCharge customer vault was found for this customer.');
+        }
+
+        $savedMethods = $this->customerVaultService->fetchSavedPaymentMethods($customerVault, $context);
+        $selectedMethod = null;
+        foreach ($savedMethods as $method) {
+            if (hash_equals((string) ($method['methodId'] ?? ''), $savedMethodId)) {
+                $selectedMethod = $method;
+                break;
+            }
+        }
+
+        if ($selectedMethod === null) {
+            throw PaymentException::asyncProcessInterrupted($orderData->orderTransactionId, 'The selected saved payment method is not available.');
+        }
+
+        $this->storeSavedCardCheckoutMetadata($orderData, $config, $context);
+        $cardCode = !empty($selectedMethod['requiresCardCode'])
+            ? $this->cardCode($request, $orderData->orderTransactionId)
+            : null;
+
+        return $this->apiClient->chargeSavedCustomerMethod(
+            $orderData,
+            $config,
+            (string) $customerVault->getEbizCustomerToken(),
+            $savedMethodId,
+            $cardCode
+        );
+    }
+
+    private function storeSavedCardCheckoutMetadata(CheckoutOrderData $orderData, PluginConfig $config, Context $context): void
+    {
+        $this->transactionRecordStore->upsert($orderData->orderTransactionId, [
+            'order_id' => $orderData->orderId,
+            'order_number' => $orderData->orderNumber,
+            'lookup_key' => $orderData->orderTransactionId,
+            'mode' => $config->processingCommand(),
+            'normalized_state' => 'in_progress',
+            'amount_total' => $orderData->amountDue,
+            'currency_iso' => $orderData->currencyIso,
+            'last_support_message' => 'Saved-payment-method checkout initiated.',
+            'last_sync_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
+        ], $context);
+    }
+
+    /**
+     * @param array<string, mixed> $verificationResponse
+     */
+    private function storeVerificationResponse(string $orderTransactionId, array $verificationResponse, Context $context): void
+    {
+        $criteria = new Criteria([$orderTransactionId]);
+
+        /** @var OrderTransactionEntity|null $transaction */
+        $transaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $customFields = $transaction?->getCustomFields() ?? [];
+        $customFields['ebizcharge_verification_response'] = $verificationResponse;
+
+        $this->orderTransactionRepository->update([
+            [
+                'id' => $orderTransactionId,
+                'customFields' => $customFields,
+            ],
+        ], $context);
+    }
+
+    private function selectedSavedMethodId(Request $request): ?string
+    {
+        $value = $request->request->get('ebizchargeSavedMethodId');
+        if (!\is_scalar($value)) {
+            return null;
+        }
+
+        $methodId = trim((string) $value);
+
+        return $methodId === '' ? null : $methodId;
+    }
+
+    private function cardCode(Request $request, string $orderTransactionId): ?string
+    {
+        $value = $request->request->get('ebizchargeCardCode');
+        if (!\is_scalar($value)) {
+            return null;
+        }
+
+        $cardCode = trim((string) $value);
+        if ($cardCode === '') {
+            return null;
+        }
+
+        if (!preg_match('/^(?:\d{3,4}|-2|-9)$/', $cardCode)) {
+            throw PaymentException::asyncProcessInterrupted($orderTransactionId, 'The EBizCharge card security code is invalid.');
+        }
+
+        return $cardCode;
     }
 
     public function finalize(Request $request, PaymentTransactionStruct $transaction, Context $context): void

@@ -1,16 +1,16 @@
 <img width="1600" height="400" alt="EBizCharge" src="https://github.com/user-attachments/assets/5b0875e6-5573-41c2-841d-c7f49f4ceb08" />
 
-# eBizCharge Payment for Shopware 6.7
+# EBizCharge Payment for Shopware 6.7
 
 Version `1.0.1`
 
 ## Introduction
 
-The **eBizCharge Payment Plugin** enables secure hosted credit-card payments for Shopware 6.7 stores through the eBizCharge REST hosted webform flow. Customers are redirected to eBizCharge for payment entry, keeping raw card data outside the Shopware backend.
+The **EBizCharge Payment Plugin** enables secure hosted payments for Shopware 6.7 stores through the EBizCharge REST hosted webform flow. Customers are redirected to EBizCharge for payment entry, keeping raw payment data outside the Shopware backend.
 
-REST only integration using the eBizCharge hosted webform and REST verification APIs.
+REST only integration using the EBizCharge hosted webform and REST verification APIs.
 
-The plugin supports hosted checkout, saved-card account management for registered customers, admin Pay by Link workflows, webhook status updates, and provider-backed transaction synchronization for capture, void, and refund events.
+The plugin supports hosted checkout, saved-payment-method account management for registered customers, admin Pay by Link workflows, webhook status updates, and provider-backed transaction synchronization for capture, void, and refund events.
 
 ---
 
@@ -18,39 +18,39 @@ The plugin supports hosted checkout, saved-card account management for registere
 
 ### Secure Hosted Payment Processing
 
-- Accept credit-card payments through the eBizCharge hosted webform.
-- Keep sensitive card entry on the provider-hosted form.
+- Accept hosted payments through the EBizCharge secure checkout.
+- Keep sensitive payment entry on the provider-hosted form.
 - Use server-side provider verification before Shopware transaction states are applied.
 
 ### Pay by Link
 
-- Create `eBizCharge Pay by Link` as a Shopware payment method for admin/order workflows.
+- Create `EBizCharge Pay by Link` as a Shopware payment method for admin/order workflows.
 - Automatically generate and email hosted payment links for Pay by Link order transactions.
 - Resend payment links from the Shopware Administration order view.
 - Handle payment-link return, success, and failure pages in the storefront.
 
-### Saved Cards
+### Saved Payment Methods
 
-- Let registered customers manage saved eBizCharge payment methods from their account area.
-- Add a saved card through a hosted eBizCharge form.
-- Delete saved cards.
+- Let registered customers manage saved EBizCharge payment methods from their account area.
+- Add a saved payment method through a hosted EBizCharge form.
+- Delete saved payment methods.
 - Set a default saved payment method.
 
 ### Admin Panel Integration
 
-- Configure eBizCharge credentials and checkout behavior from Shopware Administration.
+- Configure EBizCharge credentials and checkout behavior from Shopware Administration.
 - Run a connection test from the plugin configuration page.
 - Resend Pay by Link emails from admin order details.
 
 ### Webhook Status Updates
 
-- Receive eBizCharge webhook events at `/ebizcharge/webhook`.
+- Receive EBizCharge webhook events at `/ebizcharge/webhook`.
 - Protect webhook requests with Basic Auth and HMAC signature validation.
 - Sync captured, voided, and refunded sale events into Shopware transaction states.
 
 ### Flexible Configuration
 
-- Choose between sandbox and production eBizCharge environments.
+- Choose between sandbox and production EBizCharge environments.
 - Configure REST base URLs and credentials per environment.
 - Select `Sale` or `AuthOnly` processing.
 - Configure transaction description, AVS behavior, verification lookback, timeout, retries, and webhook security.
@@ -92,7 +92,7 @@ git clone https://github.com/solution25com/ebizcharge-shopware-6-solution25.git
 Extensions > My Extensions
 ```
 
-4. Locate the eBizCharge plugin and click **Install**.
+4. Locate the EBizCharge plugin and click **Install**.
 
 5. Install and activate the plugin.
 
@@ -100,12 +100,12 @@ Extensions > My Extensions
 
 ## Plugin Configuration
 
-After installing the plugin, configure your **eBizCharge** credentials and checkout behavior through the Shopware Administration panel.
+After installing the plugin, configure your **EBizCharge** credentials and checkout behavior through the Shopware Administration panel.
 
 ### Accessing the Configuration
 
 1. Go to **Extensions > My extensions**
-2. Open the eBizCharge plugin configuration
+2. Open the EBizCharge plugin configuration
 3. Select the sales channel you want to configure
 4. Save credentials and run the connection test
 
@@ -173,16 +173,16 @@ Connection health is tracked per sales channel and credential fingerprint. passw
 
 ## Checkout Experience
 
-The plugin integrates into Shopware checkout through the `eBizCharge Credit Card` payment method.
+The plugin integrates into Shopware checkout through the `EBizCharge Hosted Payment` payment method.
 
-### Credit Card Payment
+### Hosted Payment
 
-1. Customer selects **eBizCharge Credit Card** in checkout.
+1. Customer selects **EBizCharge Hosted Payment** in checkout.
 2. Shopware creates the order and order transaction.
 3. The plugin validates configuration and connection health.
-4. The plugin creates an eBizCharge hosted webform URL.
-5. Customer is redirected to the hosted eBizCharge payment form.
-6. eBizCharge redirects the customer back to Shopware.
+4. The plugin creates an EBizCharge hosted webform URL.
+5. Customer is redirected to the hosted EBizCharge payment form.
+6. EBizCharge redirects the customer back to Shopware.
 7. Shopware finalization verifies the payment with provider data before updating the transaction state.
 
 <img width="780" height="1280" alt="image" src="https://github.com/user-attachments/assets/8e17c14f-cfbe-4062-b876-e0c93e167e25" />
@@ -190,7 +190,7 @@ The plugin integrates into Shopware checkout through the `eBizCharge Credit Card
 
 ### Saved Payment Methods During Checkout
 
-For registered customers, the hosted eBizCharge form can display saved payment methods when customer vault data exists.
+For registered customers, the hosted EBizCharge form can display saved payment methods when customer vault data exists.
 
 ---
 
@@ -200,10 +200,10 @@ The plugin supports admin-managed Pay by Link payments.
 
 ### How It Works
 
-1. An order transaction is created with the `eBizCharge Pay by Link` payment method.
-2. The plugin creates a hosted eBizCharge email-form URL.
+1. An order transaction is created with the `EBizCharge Pay by Link` payment method.
+2. The plugin creates a hosted EBizCharge email-form URL.
 3. The plugin sends the payment link using the `ebizcharge.admin.payment_link` mail template.
-4. Customer opens the link and completes payment on the hosted eBizCharge form.
+4. Customer opens the link and completes payment on the hosted EBizCharge form.
 5. The return endpoint finalizes the payment and redirects to success or failure.
 
 ### Admin Resend
@@ -226,14 +226,14 @@ Payment-link return routes:
 
 ---
 
-## Saved Cards
+## Saved Payment Methods
 
-Registered customers can manage their saved eBizCharge cards from the account dashboard.
+Registered customers can manage their saved EBizCharge payment methods from the account dashboard.
 
 <img width="1630" height="982" alt="image" src="https://github.com/user-attachments/assets/829f4d36-f393-46b4-8bb9-d044d938aea2" />
 
 
-### Accessing Saved Cards
+### Accessing Saved Payment Methods
 
 Customers can open:
 
@@ -241,17 +241,17 @@ Customers can open:
 /account/ebizcharge/saved-cards
 ```
 
-or use the **eBizCharge Saved Cards** account menu entry.
+or use the **EBizCharge Saved Payment Methods** account menu entry.
 
 
 ### Available Actions
 
-- View saved cards
-- Add a new card through a hosted eBizCharge form
-- Delete a saved card
-- Set a default saved card
+- View saved payment methods
+- Add a card or bank account through a hosted EBizCharge form
+- Delete a saved payment method
+- Set a default saved payment method
 
-Saved-card records are stored in:
+Saved-payment-method records are stored in:
 
 ```text
 ebizcharge_vaulted_customer
@@ -279,7 +279,7 @@ Webhook requests are validated with configured Basic Auth credentials and an HMA
 
 ## Transaction Data
 
-The plugin stores eBizCharge transaction metadata in:
+The plugin stores EBizCharge transaction metadata in:
 
 ```text
 ebizcharge_payment_transaction

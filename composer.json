@@ -1,6 +1,6 @@
 {
     "name": "ebizcharge/shopware67-payment-plugin",
-    "description": "eBizCharge payment plugin for Shopware 6.7 using the REST hosted webform flow.",
+    "description": "EBizCharge payment plugin for Shopware 6.7 using the REST hosted webform flow.",
     "type": "shopware-platform-plugin",
     "license": "proprietary",
     "version": "1.0.1",
@@ -17,7 +17,7 @@
         "shopware/administration": ">=6.7.0.0 <6.8.0.0"
     },
     "require-dev": {
-        "squizlabs/php_codesniffer": "^3.7"
+        "squizlabs/php_codesniffer": "^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,12 +33,12 @@
         "shopware-plugin-class": "EbizChargeShopware\\EbizChargeShopware",
         "plugin-icon": "src/Resources/config/plugin.png",
         "label": {
-            "en-GB": "eBizCharge for Shopware 6.7",
-            "de-DE": "eBizCharge fuer Shopware 6.7"
+            "en-GB": "EBizCharge for Shopware 6.7",
+            "de-DE": "EBizCharge fuer Shopware 6.7"
         },
         "description": {
-            "en-GB": "REST-only eBizCharge payment plugin for Shopware 6.7 with hosted card checkout, admin connection diagnostics, and provider-verified finalize handling without raw card data.",
-            "de-DE": "REST-only eBizCharge Zahlungsplugin fuer Shopware 6.7 mit gehostetem Karten-Checkout, Admin-Verbindungsdiagnose und verifiziertem Finalize ohne Rohkartendaten im Shop."
+            "en-GB": "REST-only EBizCharge payment plugin for Shopware 6.7 with hosted checkout, admin connection diagnostics, and provider-verified finalize handling without raw payment data.",
+            "de-DE": "REST-only EBizCharge Zahlungsplugin fuer Shopware 6.7 mit gehostetem Checkout, Admin-Verbindungsdiagnose und verifiziertem Finalize ohne Rohzahlungsdaten im Shop."
         },
         "manufacturerLink": {
             "en-GB": "https://solution25.com/en/",
@@ -47,6 +47,12 @@
         "supportLink": {
             "en-GB": "https://solution25.com/en/contact/",
             "de-DE": "https://solution25.com/en/contact/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true,
+            "php-http/discovery": true
         }
     }
 }

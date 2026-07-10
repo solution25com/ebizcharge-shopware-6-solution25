@@ -14,6 +14,14 @@ Component.register('ebizcharge-api-test', {
         };
     },
 
+    computed: {
+        buttonLabel() {
+            return this.isSaveSuccessful
+                ? this.$tc('ebizcharge.connectionTest.successButton')
+                : this.$tc('ebizcharge.connectionTest.button');
+        },
+    },
+
     methods: {
         saveFinish() {
             this.isSaveSuccessful = false;
@@ -38,7 +46,7 @@ Component.register('ebizcharge-api-test', {
                 if (result.success) {
                     this.isSaveSuccessful = true;
                     this.createNotificationSuccess({
-                        title: 'eBizCharge connection test',
+                        title: 'EBizCharge connection test',
                         message: `${result.message} Fingerprint ${result.credentialFingerprint}.`,
                     });
 
@@ -46,12 +54,12 @@ Component.register('ebizcharge-api-test', {
                 }
 
                 this.createNotificationError({
-                    title: 'eBizCharge connection test',
+                    title: 'EBizCharge connection test',
                     message: result.message,
                 });
             } catch (error) {
                 this.createNotificationError({
-                    title: 'eBizCharge connection test',
+                    title: 'EBizCharge connection test',
                     message: error.message || 'Connection test failed.',
                 });
             } finally {

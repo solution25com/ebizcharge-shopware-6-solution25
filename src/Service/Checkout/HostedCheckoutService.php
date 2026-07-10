@@ -25,9 +25,9 @@ final class HostedCheckoutService
     ) {
     }
 
-    public function start(CheckoutOrderData $orderData, PluginConfig $config, string $shopwareReturnUrl, Context $context, ?bool $savePaymentMethod = null, ?bool $showSavedPaymentMethods = null, string $formType = ProviderContract::WEBFORM_TYPE): HostedCheckoutRedirect
+    public function start(CheckoutOrderData $orderData, PluginConfig $config, string $shopwareReturnUrl, Context $context, ?bool $savePaymentMethod = null, ?bool $showSavedPaymentMethods = null, string $formType = ProviderContract::WEBFORM_TYPE, string $payByType = ProviderContract::PAY_BY_TYPE_CREDIT_CARD_AND_ACH): HostedCheckoutRedirect
     {
-        $payload = $this->requestBuilder->build($orderData, $config, $shopwareReturnUrl, $savePaymentMethod, $showSavedPaymentMethods, $formType);
+        $payload = $this->requestBuilder->build($orderData, $config, $shopwareReturnUrl, $savePaymentMethod, $showSavedPaymentMethods, $formType, $payByType);
         $response = $this->providerClient->send(ProviderOperation::GET_WEBFORM_URL, $payload, $config);
         $redirectUrl = $this->responseNormalizer->extractHostedRedirectUrl($response['body']);
 

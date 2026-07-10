@@ -212,7 +212,7 @@ mustContain($root . '/src/Checkout/Payment/Handler/CreditCardPaymentHandler.php'
     'PaymentHandlerType::RECURRING',
     'if ($orderData->amountDue <= 0.0)',
     '): Struct',
-    '): RedirectResponse',
+    '): ?RedirectResponse',
 ], $violations);
 mustNotContain($root . '/src/Checkout/Payment/Handler/CreditCardPaymentHandler.php', [
     'totalAmount <= 0.0',

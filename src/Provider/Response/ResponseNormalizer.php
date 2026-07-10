@@ -18,7 +18,7 @@ final class ResponseNormalizer
         $url = $this->findFirstUrl($body);
 
         if ($url === null) {
-            throw new VerificationException('The eBizCharge hosted form URL could not be found in the provider response.');
+            throw new VerificationException('The EBizCharge hosted form URL could not be found in the provider response.');
         }
 
         return $url;

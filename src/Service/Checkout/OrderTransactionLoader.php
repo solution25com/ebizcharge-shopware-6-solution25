@@ -66,11 +66,11 @@ final class OrderTransactionLoader
                 $shippingAddress = new AddressData(
                     $address->getFirstName(),
                     $address->getLastName(),
-                    $address->getCompany(),
+                    $this->companyName($address->getCompany(), $address->getFirstName(), $address->getLastName()),
                     $address->getStreet(),
                     null,
                     $address->getCity(),
-                    $stateCode,
+                    $this->requiredStateCode($stateCode),
                     $address->getZipcode(),
                     $address->getCountry()?->getIso()
                 );
@@ -128,11 +128,11 @@ final class OrderTransactionLoader
             new AddressData(
                 $billingAddress->getFirstName(),
                 $billingAddress->getLastName(),
-                $billingAddress->getCompany(),
+                $this->companyName($billingAddress->getCompany(), $billingAddress->getFirstName(), $billingAddress->getLastName()),
                 $billingAddress->getStreet(),
                 null,
                 $billingAddress->getCity(),
-                $billingStateCode,
+                $this->requiredStateCode($billingStateCode),
                 $billingAddress->getZipcode(),
                 $billingAddress->getCountry()?->getIso()
             ),
@@ -216,5 +216,24 @@ final class OrderTransactionLoader
         }
 
         return 'EA';
+    }
+
+    public function companyName(?string $companyName, ?string $firstName, ?string $lastName): string
+    {
+        $companyName = trim((string) $companyName);
+        if ($companyName !== '') {
+            return $companyName;
+        }
+
+        $fullName = trim(sprintf('%s %s', $firstName, $lastName));
+
+        return $fullName !== '' ? $fullName : 'n/a';
+    }
+
+    public function requiredStateCode(?string $stateCode): string
+    {
+        $stateCode = trim((string) $stateCode);
+
+        return $stateCode !== '' ? $stateCode : 'NA';
     }
 }

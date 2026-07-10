@@ -66,18 +66,23 @@ final class FinalizationService
         string $formType = 'Webform'
     ): FinalizationOutcome {
         try {
-            $result = $this->lookupVerifiedResult($request, $orderData, $config, $context, $formType);
+            $verificationData = $this->lookupVerifiedResult($request, $orderData, $config, $context, $formType);
+
+            /** @var ProviderOperationResult $result */
+            $result = $verificationData['result'];
 
             return $this->handleImmediate(
                 $orderData,
                 $result,
+                $config,
                 $context,
                 $result->outcome !== ProviderOperationResult::OUTCOME_APPROVED
                     && $result->outcome !== ProviderOperationResult::OUTCOME_CANCELLED,
-                $result->outcome === ProviderOperationResult::OUTCOME_CANCELLED
+                $result->outcome === ProviderOperationResult::OUTCOME_CANCELLED,
+                $verificationData['paymentInternalId']
             );
         } catch (VerificationException | ProviderCommunicationException $exception) {
-            $this->logger->warning('eBizCharge finalization requires follow-up verification.', [
+            $this->logger->warning('EBizCharge finalization requires follow-up verification.', [
                 'orderTransactionId' => $orderData->orderTransactionId,
                 'browserOutcome' => $browserOutcome->value,
                 'message' => $exception->getMessage(),
@@ -91,20 +96,25 @@ final class FinalizationService
                     true,
                     'verification_pending'
                 ),
+                $config,
                 $context,
                 true,
-                false
+                false,
+                null
             );
         }
     }
 
+    /**
+     * @return array{result: ProviderOperationResult, paymentInternalId: ?string}
+     */
     private function lookupVerifiedResult(
         Request $request,
         CheckoutOrderData $orderData,
         PluginConfig $config,
         Context $context,
         string $formType = 'Webform'
-    ): ProviderOperationResult {
+    ): array {
         $referenceNumber = $this->browserReturnParser->referenceNumber($request);
 
         if ($referenceNumber !== null) {
@@ -116,18 +126,20 @@ final class FinalizationService
 
             $this->storeVerificationResponse(
                 $orderData->orderTransactionId,
-                ProviderOperation::GET_TRANSACTION_DETAILS,
                 $response,
                 $context
             );
 
-            return $this->responseNormalizer->normalizeVerifiedPayment(
-                $response['body'],
-                $config->processingCommand(),
-                $orderData,
-                $referenceNumber,
-                $config->enforceAvsCheck()
-            );
+            return [
+                'result' => $this->responseNormalizer->normalizeVerifiedPayment(
+                    $response['body'],
+                    $config->processingCommand(),
+                    $orderData,
+                    $referenceNumber,
+                    $config->enforceAvsCheck()
+                ),
+                'paymentInternalId' => null,
+            ];
         }
 
         $response = $this->providerClient->send(
@@ -138,13 +150,13 @@ final class FinalizationService
 
         $this->storeVerificationResponse(
             $orderData->orderTransactionId,
-            ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
             $response,
             $context
         );
 
         $searchResult = $response['body']['searchEbizWebFormReceivedPaymentsResponse']['SearchEbizWebFormReceivedPaymentsResult'][0] ?? [];
         $referenceNumber = is_array($searchResult) ? trim((string) ($searchResult['RefNum'] ?? $searchResult['refNum'] ?? '')) : '';
+        $paymentInternalId = $searchResult['PaymentInternalId'] ?? $searchResult['paymentInternalId'] ?? null;
 
         if ($referenceNumber !== '') {
             $detailsResponse = $this->providerClient->send(
@@ -153,22 +165,28 @@ final class FinalizationService
                 $config
             );
 
-            return $this->responseNormalizer->normalizeVerifiedPayment(
-                $detailsResponse['body'],
-                $config->processingCommand(),
-                $orderData,
-                $referenceNumber,
-                $config->enforceAvsCheck()
-            );
+            return [
+                'result' => $this->responseNormalizer->normalizeVerifiedPayment(
+                    $detailsResponse['body'],
+                    $config->processingCommand(),
+                    $orderData,
+                    $referenceNumber,
+                    $config->enforceAvsCheck()
+                ),
+                'paymentInternalId' => $paymentInternalId,
+            ];
         }
 
-        return $this->responseNormalizer->normalizeVerifiedPayment(
-            $response['body'],
-            $config->processingCommand(),
-            $orderData,
-            null,
-            $config->enforceAvsCheck()
-        );
+        return [
+            'result' => $this->responseNormalizer->normalizeVerifiedPayment(
+                $response['body'],
+                $config->processingCommand(),
+                $orderData,
+                null,
+                $config->enforceAvsCheck()
+            ),
+            'paymentInternalId' => $paymentInternalId,
+        ];
     }
 
     /**
@@ -176,7 +194,6 @@ final class FinalizationService
      */
     private function storeVerificationResponse(
         string $orderTransactionId,
-        ProviderOperation $operation,
         array $response,
         Context $context
     ): void {
@@ -185,9 +202,7 @@ final class FinalizationService
         /** @var OrderTransactionEntity|null $transaction */
         $transaction = $this->orderTransactionRepository->search($criteria, $context)->first();
         $customFields = $transaction?->getCustomFields() ?? [];
-
-        $storedResponse = $this->storeResponse($response['body'] ?? []);
-        $customFields['ebizcharge_verification_response'] = $storedResponse;
+        $customFields['ebizcharge_verification_response'] = $this->storeResponse($response['body'] ?? []);
 
         $this->orderTransactionRepository->update([
             [
@@ -200,11 +215,15 @@ final class FinalizationService
     private function handleImmediate(
         CheckoutOrderData $orderData,
         ProviderOperationResult $result,
+        PluginConfig $config,
         Context $context,
         bool $throwInterrupted,
-        bool $throwCustomerCancelled
+        bool $throwCustomerCancelled,
+        ?string $paymentInternalId
     ): FinalizationOutcome {
         $targetState = $this->transactionStateSyncService->apply($orderData->orderTransactionId, $result, $context);
+        $this->markWebFormPaymentAsApplied($result, $config, $paymentInternalId);
+
         $this->transactionRecordStore->upsert($orderData->orderTransactionId, [
             'order_id' => $orderData->orderId,
             'order_number' => $orderData->orderNumber,
@@ -219,6 +238,37 @@ final class FinalizationService
         ], $context);
 
         return new FinalizationOutcome($result, $targetState, $throwInterrupted, $throwCustomerCancelled);
+    }
+
+    private function markWebFormPaymentAsApplied(
+        ProviderOperationResult $result,
+        PluginConfig $config,
+        ?string $paymentInternalId
+    ): void {
+        if ($result->outcome !== ProviderOperationResult::OUTCOME_APPROVED) {
+            return;
+        }
+
+        if ($paymentInternalId === null || $paymentInternalId === '') {
+            return;
+        }
+
+        try {
+            $this->providerClient->send(
+                ProviderOperation::MARK_WEBFORM_PAYMENT_APPLIED,
+                ['paymentInternalId' => $paymentInternalId],
+                $config
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->warning(
+                'EBizCharge web-form payment could not be marked as applied after Shopware state sync.',
+                [
+                    'providerReference' => $result->providerReference,
+                    'paymentInternalId' => $paymentInternalId,
+                    'message' => $exception->getMessage(),
+                ]
+            );
+        }
     }
 
     private function storeResponse(array $body): array

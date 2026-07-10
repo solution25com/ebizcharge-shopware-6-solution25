@@ -82,3 +82,35 @@
     min-height: 720px;
     border: 0;
 }
+
+.ebiz-bank-methods__toggle {
+    list-style: none;
+}
+
+.ebiz-bank-methods__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.ebiz-bank-methods__panel {
+    max-width: 680px;
+    border: 1px solid #d8dde6;
+    background: #ffffff;
+}
+
+.ebiz-bank-methods__table td {
+    padding: 0.75rem 1rem;
+}
+
+.ebiz-bank-methods__action {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.ebiz-saved-card-checkout {
+    max-width: 360px;
+}
+
+.ebiz-saved-card-checkout__code-input {
+    max-width: 120px;
+}
