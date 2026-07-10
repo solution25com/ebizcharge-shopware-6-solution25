@@ -187,7 +187,7 @@ The plugin integrates into Shopware checkout through the `EBizCharge Hosted Paym
 6. EBizCharge redirects the customer back to Shopware.
 7. Shopware finalization verifies the payment with provider data before updating the transaction state.
 
-<img width="780" height="1280" alt="image" src="https://github.com/user-attachments/assets/8e17c14f-cfbe-4062-b876-e0c93e167e25" />
+<img width="1002" height="1542" alt="image" src="https://github.com/user-attachments/assets/43c4e993-3d34-48c2-8901-88e9a9cde9bf" />
 
 
 ### Saved Payment Methods During Checkout
@@ -237,7 +237,7 @@ Payment-link return routes:
 
 Registered customers can manage their saved EBizCharge payment methods from the account dashboard.
 
-<img width="1630" height="982" alt="image" src="https://github.com/user-attachments/assets/829f4d36-f393-46b4-8bb9-d044d938aea2" />
+<img width="2304" height="1016" alt="image" src="https://github.com/user-attachments/assets/38f1c122-7a7a-4446-9a3a-cf00a1d794ca" />
 
 
 ### Accessing Saved Payment Methods
