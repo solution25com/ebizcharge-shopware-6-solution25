@@ -86,8 +86,8 @@ $forbiddenSourcePatterns = [
     'SoapClient' => 'SOAP clients are explicitly forbidden; the plugin must remain REST-only',
     'ext-soap' => 'ext-soap dependency is explicitly forbidden; the plugin must remain REST-only',
     'wsdl' => 'WSDL references are explicitly forbidden; the plugin must remain REST-only',
-    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v1.0.1',
-    '<prototype ' => 'runtime service discovery must stay explicit in v1.0.1',
+    'monolog.logger.' => 'plugin runtime must not depend on a hidden monolog channel in v1.0.2',
+    '<prototype ' => 'runtime service discovery must stay explicit in v1.0.2',
     'AuditLogService' => 'audit service was removed from the minimal install-safe slice',
     'AuditStoreInterface' => 'audit store was removed from the minimal install-safe slice',
     'DbalAuditStore' => 'audit DBAL store was removed from the minimal install-safe slice',
@@ -307,7 +307,7 @@ mustNotContain($root . '/src/Resources/app/administration/src', [
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `1.0.1`',
+    'Version `1.0.2`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
@@ -319,14 +319,14 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
-    '## [1.0.1]',
+    '## [1.0.2]',
 ], $violations);
 mustNotContain($root . '/CHANGELOG.md', [
     'Dedicated logger channel `ebizcharge_payment`',
 ], $violations);
 
 mustContain($root . '/docs/architecture/plugin-architecture.md', [
-    'v1.0.0',
+    'v1.0.2',
     'src/Service/Connection/',
     'src/Storage/Dal/',
 ], $violations);
@@ -342,7 +342,7 @@ mustContain($root . '/docs/review/final-audit.md', [
 ], $violations);
 
 mustContain($root . '/composer.json', [
-    '"version": "1.0.1"',
+    '"version": "1.0.2"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

@@ -2,7 +2,7 @@
 
 # EBizCharge Payment for Shopware 6.7
 
-Version `1.0.1`
+Version `1.0.2`
 
 ## Introduction
 
@@ -10,7 +10,7 @@ The **EBizCharge Payment Plugin** enables secure hosted payments for Shopware 6.
 
 REST only integration using the EBizCharge hosted webform and REST verification APIs.
 
-The plugin supports hosted checkout, saved-payment-method account management for registered customers, admin Pay by Link workflows, webhook status updates, and provider-backed transaction synchronization for capture, void, and refund events.
+The plugin supports hosted card and ACH checkout, saved-payment-method account management for registered customers, saved-payment-method checkout, admin Pay by Link workflows, webhook status updates, and provider-backed transaction synchronization for capture, void, and refund events.
 
 ---
 
@@ -18,9 +18,10 @@ The plugin supports hosted checkout, saved-payment-method account management for
 
 ### Secure Hosted Payment Processing
 
-- Accept hosted payments through the EBizCharge secure checkout.
+- Accept hosted card and ACH payments through the EBizCharge secure checkout.
 - Keep sensitive payment entry on the provider-hosted form.
 - Use server-side provider verification before Shopware transaction states are applied.
+- Mark approved hosted webform payments as applied in EBizCharge after Shopware state sync.
 
 ### Pay by Link
 
@@ -32,7 +33,8 @@ The plugin supports hosted checkout, saved-payment-method account management for
 ### Saved Payment Methods
 
 - Let registered customers manage saved EBizCharge payment methods from their account area.
-- Add a saved payment method through a hosted EBizCharge form.
+- Add a saved card or ACH bank account through a hosted EBizCharge form.
+- Pay during checkout with a selected saved card or saved bank account.
 - Delete saved payment methods.
 - Set a default saved payment method.
 
@@ -190,7 +192,12 @@ The plugin integrates into Shopware checkout through the `EBizCharge Hosted Paym
 
 ### Saved Payment Methods During Checkout
 
-For registered customers, the hosted EBizCharge form can display saved payment methods when customer vault data exists.
+For registered customers, checkout displays saved EBizCharge payment methods when customer vault data exists.
+
+- Customers can choose a saved card or saved bank account from the checkout payment section.
+- Saved cards and saved bank accounts are grouped separately.
+- Saved cards can request the card security code when EBizCharge marks it as required.
+- The hosted EBizCharge form is still used when the customer chooses to pay with a new payment method.
 
 ---
 

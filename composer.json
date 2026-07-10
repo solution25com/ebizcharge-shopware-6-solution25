@@ -3,7 +3,7 @@
     "description": "EBizCharge payment plugin for Shopware 6.7 using the REST hosted webform flow.",
     "type": "shopware-platform-plugin",
     "license": "proprietary",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "authors": [
         {
             "name": "solution25",

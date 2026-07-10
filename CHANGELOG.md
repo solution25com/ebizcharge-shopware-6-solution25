@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.2] - 2026-07-10
+
+### Added
+
+- Added checkout selection for saved EBizCharge payment methods, including saved cards and saved ACH bank accounts.
+- Added direct saved-payment-method charging for registered customers through EBizCharge customer transactions.
+- Added ACH bank-account support to the hosted saved-payment-method flow.
+- Added provider-side applied-status updates after approved hosted webform payments are synced in Shopware.
+
+### Changed
+
+- EBizCharge hosted webform payloads now include required company, country, currency, and date fields for provider compatibility.
+- Saved-payment-method storefront views now group bank accounts separately from cards and request a card security code only when the saved card requires it.
+- EBizCharge naming, snippets, payment method labels, plugin icon, and admin/storefront UX copy were aligned with the current brand spelling.
+
 ## [1.0.1] - 2026-06-12
 
 ### Changed
