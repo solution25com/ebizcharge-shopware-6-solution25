@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.3] - 2026-07-29
+### Changed
+- Redesigned saved payment method UI at checkout and in the account section with card and ACH styling, brand logos, last 4 digits display, and method name labels
+- Separated credit card and ACH payment methods into distinct sections
+- Improved default payment method selection handling
+- Removed saved payment dropdown when no saved cards or ACH accounts are available
+- Improved delete confirmation flow with loading feedback for account redirects
+- Removed inline style overrides for cleaner stylesheet inheritance
+
 ## [1.0.2] - 2026-07-10
 
 ### Added
