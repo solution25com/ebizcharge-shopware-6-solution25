@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.3] - 2026-07-29
+## [1.0.3] - 2026-07-27
 ### Changed
 - Redesigned saved payment method UI at checkout and in the account section with card and ACH styling, brand logos, last 4 digits display, and method name labels
 - Separated credit card and ACH payment methods into distinct sections
