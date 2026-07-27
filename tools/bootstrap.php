@@ -561,6 +561,8 @@ namespace Shopware\Core\Framework\DataAbstractionLayer\Search {
     if (!class_exists(Criteria::class)) {
         class Criteria
         {
+            private array $filters = [];
+
             public function __construct(public array $ids = [])
             {
             }
@@ -572,12 +574,19 @@ namespace Shopware\Core\Framework\DataAbstractionLayer\Search {
 
             public function addFilter(object $filter): self
             {
+                $this->filters[] = $filter;
+
                 return $this;
             }
 
             public function setLimit(int $limit): self
             {
                 return $this;
+            }
+
+            public function getFilters(): array
+            {
+                return $this->filters;
             }
         }
     }
@@ -589,6 +598,16 @@ namespace Shopware\Core\Framework\DataAbstractionLayer\Search\Filter {
         {
             public function __construct(public string $field, public mixed $value)
             {
+            }
+
+            public function getField(): string
+            {
+                return $this->field;
+            }
+
+            public function getValue(): mixed
+            {
+                return $this->value;
             }
         }
     }

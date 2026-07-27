@@ -18,6 +18,7 @@ use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 class EbizChargeShopware extends Plugin
 {
     public const CREDIT_CARD_TECHNICAL_NAME = 'ebizcharge_credit_card';
+    public const ACH_TECHNICAL_NAME = 'ebizcharge_ach';
     public const PAY_BY_LINK_TECHNICAL_NAME = 'ebizcharge_pay_by_link';
 
     public function install(InstallContext $installContext): void

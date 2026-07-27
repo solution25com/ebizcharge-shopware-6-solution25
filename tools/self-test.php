@@ -205,14 +205,19 @@ $tests = [];
 
 $tests['payment-method-installer-create-update-deactivate'] = static function (): void {
     $repository = new class extends EntityRepository {
-        public ?string $existingId = null;
+        public array $existingIds = [];
         public array $created = [];
         public array $updated = [];
 
         public function create(array $data, object $context): void
         {
             $this->created[] = $data;
-            $this->existingId = 'payment-method-id';
+            foreach ($data as $row) {
+                $technicalName = (string) ($row['technicalName'] ?? '');
+                if ($technicalName !== '') {
+                    $this->existingIds[$technicalName] = $technicalName . '-id';
+                }
+            }
         }
 
         public function update(array $data, object $context): void
@@ -222,7 +227,9 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
 
         public function searchIds(object $criteria, object $context): object
         {
-            return new class($this->existingId) {
+            $technicalName = $this->technicalNameFromCriteria($criteria);
+
+            return new class($this->existingIds[$technicalName] ?? null) {
                 public function __construct(private ?string $existingId)
                 {
                 }
@@ -233,6 +240,17 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
                 }
             };
         }
+
+        private function technicalNameFromCriteria(object $criteria): string
+        {
+            foreach ($criteria->getFilters() as $filter) {
+                if (method_exists($filter, 'getField') && method_exists($filter, 'getValue') && $filter->getField() === 'technicalName') {
+                    return (string) $filter->getValue();
+                }
+            }
+
+            return '';
+        }
     };
 
     $installer = new PaymentMethodInstaller($repository);
@@ -242,13 +260,21 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
     same(false, $repository->created[0][0]['active'], 'Payment method should be created inactive.');
     same(true, $repository->created[0][0]['afterOrderEnabled'], 'Payment method should be after-order enabled for checkout retry.');
     same('ebizcharge_credit_card', $repository->created[0][0]['technicalName'], 'Payment technical name mismatch.');
+    same('EBizCharge Credit Card', $repository->created[0][0]['name'], 'Credit card payment method name mismatch.');
+    same(false, $repository->created[1][0]['active'], 'ACH payment method should be created inactive.');
+    same(true, $repository->created[1][0]['afterOrderEnabled'], 'ACH payment method should be after-order enabled for checkout retry.');
+    same('ebizcharge_ach', $repository->created[1][0]['technicalName'], 'ACH payment technical name mismatch.');
+    same('EBizCharge ACH', $repository->created[1][0]['name'], 'ACH payment method name mismatch.');
 
     $installer->ensurePaymentMethod('plugin-id', $context, true);
     same(true, $repository->updated[0][0]['active'], 'Payment method update should accept active=true.');
     same(true, $repository->updated[0][0]['afterOrderEnabled'], 'Payment method update should keep after-order enabled for checkout retry.');
+    same(true, $repository->updated[1][0]['active'], 'ACH payment method update should accept active=true.');
+    same(true, $repository->updated[1][0]['afterOrderEnabled'], 'ACH payment method update should keep after-order enabled for checkout retry.');
 
     $installer->setPaymentMethodActive(false, $context);
-    same(false, $repository->updated[1][0]['active'], 'Payment method deactivate should write active=false.');
+    same(false, $repository->updated[2][0]['active'], 'Payment method deactivate should write active=false.');
+    same(false, $repository->updated[2][1]['active'], 'ACH payment method deactivate should write active=false.');
 };
 
 $tests['builder-hosted-payment-method-payload'] = static function (): void {

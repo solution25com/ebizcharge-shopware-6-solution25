@@ -34,7 +34,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-final class CreditCardPaymentHandler extends AbstractPaymentHandler
+class CreditCardPaymentHandler extends AbstractPaymentHandler
 {
     public function __construct(
         private readonly PluginConfigProvider $pluginConfigProvider,
@@ -108,7 +108,7 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
         $savePaymentMethod = false;
         $showSavedPaymentMethods = false;
 
-        $redirect = $this->hostedCheckoutService->start($orderData, $config, $transaction->getReturnUrl(), $context, $savePaymentMethod, $showSavedPaymentMethods);
+        $redirect = $this->hostedCheckoutService->start($orderData, $config, $transaction->getReturnUrl(), $context, $savePaymentMethod, $showSavedPaymentMethods, ProviderContract::WEBFORM_TYPE, $this->payByType());
 
         $this->transactionStateSyncService->apply(
             $transaction->getOrderTransactionId(),
@@ -239,6 +239,11 @@ final class CreditCardPaymentHandler extends AbstractPaymentHandler
         }
 
         return $cardCode;
+    }
+
+    protected function payByType(): string
+    {
+        return ProviderContract::PAY_BY_TYPE_CREDIT_CARD;
     }
 
     public function finalize(Request $request, PaymentTransactionStruct $transaction, Context $context): void

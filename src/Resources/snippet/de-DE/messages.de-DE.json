@@ -26,12 +26,17 @@
       "refreshCards": "Zahlungsmethoden aktualisieren",
       "empty": "Sie haben noch keine gespeicherten Zahlungsmethoden.",
       "expires": "Gultig bis",
+      "cardholder": "Karteninhaber",
       "defaultBadge": "Standard",
       "setDefault": "Als Standard setzen",
       "showBankAccounts": "Bankkonten anzeigen (%count%)",
       "hideBankAccounts": "Bankkonten ausblenden",
       "delete": "Entfernen",
+      "removeCard": "Karte entfernen",
+      "deleteCancel": "Abbrechen",
       "deleteConfirm": "Diese gespeicherte Zahlungsmethode entfernen?",
+      "deleteConfirmTitle": "Gespeicherte Zahlungsmethode entfernen?",
+      "deleteConfirmAction": "Entfernen",
       "deleteMissing": "Keine Zahlungsmethode zum Entfernen ausgewahlt.",
       "deleteSuccess": "Die gespeicherte Zahlungsmethode wurde entfernt.",
       "deleteFailed": "Die Zahlungsmethode konnte nicht entfernt werden. Bitte erneut versuchen.",
@@ -41,7 +46,11 @@
       "addSuccess": "Ihre Zahlungsmethode wurde erfolgreich gespeichert.",
       "addIncomplete": "Die neue Zahlungsmethode konnte noch nicht bestatigt werden. Bei Abbruch wurden keine Anderungen vorgenommen.",
       "addSessionInvalid": "Die Ruckkehr vom Zahlungsmethodenformular konnte nicht verifiziert werden. Bitte erneut versuchen.",
-      "addStartFailed": "Das Zahlungsmethodenformular konnte nicht geoffnet werden. Bitte erneut versuchen."
+      "addStartFailed": "Das Zahlungsmethodenformular konnte nicht geoffnet werden. Bitte erneut versuchen.",
+      "updatingPaymentMethods": "Gespeicherte Zahlungsmethoden werden aktualisiert...",
+      "removingPaymentMethod": "Gespeicherte Zahlungsmethode wird entfernt...",
+      "loadingAddPaymentMethod": "Formular zum Hinzufügen einer Zahlungsmethode wird geladen...",
+      "loadingSavedPaymentMethods": "Gespeicherte Zahlungsmethoden werden geladen..."
     }
   }
 }

@@ -220,14 +220,17 @@ final class EbizChargeCustomerVaultService
         foreach ($savedMethods as $method) {
             $type = (string) ($method['type'] ?? 'card');
             $brand = (string) ($method['brand'] ?? '');
+            $masked = (string) ($method['masked'] ?? '');
 
             $formattedPaymentMethods[] = [
                 'id' => (string) ($method['methodId'] ?? ''),
                 'methodId' => (string) ($method['methodId'] ?? ''),
                 'type' => $type,
                 'displayType' => $type === 'ach' ? 'Bank account' : 'Card',
-                'masked' => (string) ($method['masked'] ?? ''),
+                'masked' => $masked,
+                'last4Digits' => $this->extractLast4Digits($masked),
                 'brand' => $brand,
+                'brandKey' => $type === 'ach' ? 'bank' : $this->normalizeBrandKey($brand),
                 'expiry' => (string) ($method['expiry'] ?? ''),
                 'methodName' => (string) ($method['name'] ?? ''),
                 'requiresCardCode' => !empty($method['requiresCardCode']),
@@ -236,6 +239,28 @@ final class EbizChargeCustomerVaultService
         }
 
         return $formattedPaymentMethods;
+    }
+
+    private function extractLast4Digits(string $masked): string
+    {
+        $digits = preg_replace('/\D+/', '', $masked) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        return substr($digits, -4);
+    }
+
+    private function normalizeBrandKey(string $brand): string
+    {
+        return match (strtolower(trim($brand))) {
+            'visa', 'v' => 'visa',
+            'mastercard', 'master card', 'mc', 'm' => 'mastercard',
+            'american express', 'amex', 'a' => 'amex',
+            'discover', 'disc', 'd', 'ds' => 'discover',
+            default => 'card',
+        };
     }
 
     public function deleteSavedMethod(
@@ -399,7 +424,7 @@ final class EbizChargeCustomerVaultService
             'V' => 'Visa',
             'M', 'MC' => 'Mastercard',
             'A', 'AMEX' => 'American Express',
-            'D', 'DISC' => 'Discover',
+            'D', 'DS', 'DISC' => 'Discover',
             '' => 'Card',
             default => $brand,
         };

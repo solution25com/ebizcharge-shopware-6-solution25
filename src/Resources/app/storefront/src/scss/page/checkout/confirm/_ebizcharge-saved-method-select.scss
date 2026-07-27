@@ -1,0 +1,192 @@
+.ebiz-saved-card-checkout {
+    max-width: 440px;
+}
+
+.ebiz-payment-select {
+    position: relative;
+    display: none;
+    width: 100%;
+    max-width: 440px;
+}
+
+.has-ebiz-payment-select {
+    [data-ebiz-saved-method-select] {
+        display: none;
+    }
+
+    .ebiz-payment-select {
+        display: block;
+    }
+}
+
+.ebiz-payment-select__toggle {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid #8c9bab;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #2b3137;
+    text-align: left;
+    cursor: pointer;
+
+    &::after {
+        width: 0.55rem;
+        height: 0.55rem;
+        flex: 0 0 auto;
+        margin-left: 1rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        content: '';
+        transform: rotate(45deg) translateY(-2px);
+    }
+
+    &:focus-visible {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        outline: 0;
+    }
+}
+
+.ebiz-payment-select__selected {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+}
+
+.ebiz-payment-select__toggle .ebiz-payment-select__icon {
+    flex: 0 0 auto;
+}
+
+.ebiz-payment-select__toggle .ebiz-payment-select__option-content {
+    min-width: 0;
+}
+
+.ebiz-payment-select__toggle .ebiz-payment-select__option-main,
+.ebiz-payment-select__toggle .ebiz-payment-select__option-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ebiz-payment-select__toggle .ebiz-payment-select__option-main {
+    display: block;
+    font-weight: 600;
+}
+
+.ebiz-payment-select__toggle .ebiz-payment-select__option-meta {
+    display: block;
+    margin-top: 0.15rem;
+    color: #6c757d;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.ebiz-payment-select__menu {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    display: none;
+    width: 100%;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #d1d9e0;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+}
+
+.ebiz-payment-select.is-open .ebiz-payment-select__menu {
+    display: block;
+}
+
+.ebiz-payment-select__section-title {
+    margin: 0.5rem 0 0.35rem;
+    padding: 0 0.5rem 0.35rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.ebiz-payment-select__option {
+    display: flex;
+    width: 100%;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #2b3137;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        background: #eef6ff;
+        outline: 0;
+    }
+
+    &.is-selected {
+        background: #e7f1ff;
+    }
+}
+
+.ebiz-payment-select__icon {
+    display: inline-flex;
+    width: 40px;
+    min-width: 40px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d8dde6;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.ebiz-payment-select__icon-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.ebiz-payment-select__icon-text {
+    color: #2b3137;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.ebiz-payment-select__option-content {
+    min-width: 0;
+}
+
+.ebiz-payment-select__option-main {
+    display: block;
+    font-weight: 600;
+}
+
+.ebiz-payment-select__option-meta {
+    display: block;
+    margin-top: 0.15rem;
+    color: #6c757d;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.ebiz-saved-card-checkout__code-input {
+    max-width: 120px;
+}

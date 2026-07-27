@@ -26,12 +26,17 @@
       "refreshCards": "Refresh payment methods",
       "empty": "You have no saved payment methods yet.",
       "expires": "Expires",
+      "cardholder": "Cardholder",
       "defaultBadge": "Default",
       "setDefault": "Set as default",
       "showBankAccounts": "Show bank accounts (%count%)",
       "hideBankAccounts": "Hide bank accounts",
       "delete": "Remove",
+      "removeCard": "Remove card",
+      "deleteCancel": "Cancel",
       "deleteConfirm": "Remove this saved payment method?",
+      "deleteConfirmTitle": "Remove saved payment method?",
+      "deleteConfirmAction": "Remove",
       "deleteMissing": "No payment method was selected to remove.",
       "deleteSuccess": "The saved payment method was removed.",
       "deleteFailed": "The payment method could not be removed. Please try again.",
@@ -41,7 +46,11 @@
       "addSuccess": "Your payment method was saved successfully.",
       "addIncomplete": "We could not confirm the new payment method yet. If you cancelled, no changes were made.",
       "addSessionInvalid": "The add-payment-method return could not be verified. Please try again.",
-      "addStartFailed": "The payment method form could not be opened. Please try again."
+      "addStartFailed": "The payment method form could not be opened. Please try again.",
+      "updatingPaymentMethods": "Updating your saved payment methods...",
+      "removingPaymentMethod": "Removing saved payment method...",
+      "loadingAddPaymentMethod": "Loading add payment method form...",
+      "loadingSavedPaymentMethods": "Loading saved payment methods..."
     }
   }
 }

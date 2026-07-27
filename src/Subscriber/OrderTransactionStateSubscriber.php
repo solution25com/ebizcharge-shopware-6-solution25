@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EbizChargeShopware\Subscriber;
 
+use EbizChargeShopware\Checkout\Payment\Handler\AchPaymentHandler;
 use EbizChargeShopware\Checkout\Payment\Handler\CreditCardPaymentHandler;
 use EbizChargeShopware\Checkout\Payment\Handler\PayByLinkPaymentHandler;
 use EbizChargeShopware\Service\EbizChargeApiClient;
@@ -71,7 +72,7 @@ final class OrderTransactionStateSubscriber implements EventSubscriberInterface
             return null;
         }
 
-        $ebizHandlers = [CreditCardPaymentHandler::class, PayByLinkPaymentHandler::class];
+        $ebizHandlers = [CreditCardPaymentHandler::class, AchPaymentHandler::class, PayByLinkPaymentHandler::class];
 
         foreach ($transactions as $transaction) {
             if (in_array($transaction->getPaymentMethod()?->getHandlerIdentifier(), $ebizHandlers, true)) {

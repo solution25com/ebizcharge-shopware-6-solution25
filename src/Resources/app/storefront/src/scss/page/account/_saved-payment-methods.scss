@@ -1,0 +1,598 @@
+.ebiz-wallet-card {
+    position: relative;
+    display: flex;
+    min-height: 180px;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+    border-radius: 14px;
+    background:
+        radial-gradient(circle at 78% 62%, rgba(72, 99, 165, 0.36), transparent 34%),
+        linear-gradient(135deg, #132548 0%, #202f5e 48%, #14264b 100%);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+    color: #ffffff;
+}
+
+.ebiz-wallet-card::after {
+    position: absolute;
+    right: -14%;
+    bottom: -22%;
+    width: 62%;
+    height: 78%;
+    border: 1px solid rgba(173, 189, 225, 0.08);
+    border-radius: 50%;
+    box-shadow:
+        -18px -18px 0 rgba(173, 189, 225, 0.035),
+        -36px -36px 0 rgba(173, 189, 225, 0.035),
+        -54px -54px 0 rgba(173, 189, 225, 0.03),
+        -72px -72px 0 rgba(173, 189, 225, 0.03),
+        -90px -90px 0 rgba(173, 189, 225, 0.025),
+        -108px -108px 0 rgba(173, 189, 225, 0.025);
+    content: "";
+    pointer-events: none;
+}
+
+.ebiz-wallet-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ebiz-wallet-card__logo {
+    display: inline-flex;
+    width: 52px;
+    min-width: 52px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+}
+
+.ebiz-wallet-card__logo-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.ebiz-wallet-card__logo-text {
+    color: #2b3137;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.ebiz-wallet-card__number {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 24px;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 2px 6px rgba(15, 23, 42, 0.3);
+}
+
+.ebiz-wallet-card__dots {
+    display: inline-flex;
+    gap: 7px;
+}
+
+.ebiz-wallet-card__dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.24);
+}
+
+.ebiz-wallet-card__last4 {
+    letter-spacing: 0;
+}
+
+.ebiz-wallet-card__meta {
+    display: grid;
+    gap: 8px;
+    max-width: 100%;
+    margin-top: 18px;
+}
+
+.ebiz-wallet-card__meta-row {
+    display: grid;
+    grid-template-columns: 22px minmax(70px, 90px) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.ebiz-wallet-card__meta-row + .ebiz-wallet-card__meta-row {
+    padding-top: 8px;
+    border-top: 1px solid rgba(207, 217, 239, 0.28);
+}
+
+.ebiz-wallet-card__meta-label,
+.ebiz-wallet-card__meta-icon {
+    color: #aebbd5;
+}
+
+.ebiz-wallet-card__meta-label {
+    font-weight: 500;
+}
+
+.ebiz-wallet-card__meta-value {
+    min-width: 0;
+    font-weight: 500;
+}
+
+.ebiz-wallet-card__meta-icon {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+}
+
+.ebiz-wallet-card__meta-icon--expiry {
+    border: 2px solid currentColor;
+    border-radius: 4px;
+}
+
+.ebiz-wallet-card__meta-icon--expiry::before {
+    position: absolute;
+    top: 4px;
+    left: -2px;
+    width: calc(100% + 4px);
+    border-top: 2px solid currentColor;
+    content: "";
+}
+
+.ebiz-wallet-card__meta-icon--expiry::after {
+    position: absolute;
+    top: -5px;
+    left: 4px;
+    width: 8px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-left: 2px solid currentColor;
+    content: "";
+}
+
+.ebiz-wallet-card__meta-icon--holder::before {
+    position: absolute;
+    top: 0;
+    left: 5px;
+    width: 8px;
+    height: 8px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    content: "";
+}
+
+.ebiz-wallet-card__meta-icon--holder::after {
+    position: absolute;
+    right: 1px;
+    bottom: 0;
+    left: 1px;
+    height: 9px;
+    border: 2px solid currentColor;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    content: "";
+}
+
+.ebiz-wallet-card__name {
+    display: inline-block;
+}
+
+.ebiz-wallet-card__actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.account-ebizcharge-saved-cards .ebiz-wallet-card__actions form {
+    margin: 0;
+}
+
+.ebiz-wallet-card__actions .btn {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-width: 1px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ebiz-wallet-card__actions .btn::before {
+    display: inline-flex;
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+    align-items: center;
+    justify-content: center;
+    background: currentColor;
+    content: "";
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+}
+
+.ebiz-wallet-card__actions .btn-outline-secondary {
+    border: none;
+    background: linear-gradient(135deg, #4f69ff 0%, #3f5cf8 100%);
+    box-shadow: 0 10px 24px rgba(54, 82, 232, 0.32);
+    color: #ffffff;
+}
+
+.ebiz-wallet-card__actions .btn-outline-secondary::before {
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z'/%3E%3C/svg%3E");
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger {
+    border-color: #ff6f7d;
+    background: transparent;
+    color: #ff7a82;
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger::before {
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 6h18M8 6V4h8v2m-7 5v6m6-6v6M5 6l1 16h12l1-16'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 6h18M8 6V4h8v2m-7 5v6m6-6v6M5 6l1 16h12l1-16'/%3E%3C/svg%3E");
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger:hover {
+    background: rgba(255, 111, 125, 0.1);
+    color: #ff9aa1;
+}
+
+.ebiz-wallet-card__actions .btn-outline-secondary:hover {
+    background: linear-gradient(135deg, #5d76ff 0%, #4a66ff 100%);
+    color: #ffffff;
+}
+
+.ebiz-wallet-card__actions .btn-outline-secondary:focus,
+.ebiz-wallet-card__actions .btn-outline-danger:focus {
+    box-shadow: 0 0 0 0.2rem rgba(178, 244, 224, 0.24);
+}
+
+.ebiz-wallet-card__default-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(103, 177, 164, 0.85), rgba(44, 108, 123, 0.88));
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.ebiz-wallet-card__default-icon {
+    position: relative;
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #c6f9df;
+}
+
+.ebiz-wallet-card__default-icon::after {
+    width: 7px;
+    height: 5px;
+    margin-top: -2px;
+    border-bottom: 2px solid #2f6f76;
+    border-left: 2px solid #2f6f76;
+    content: "";
+    transform: rotate(-45deg);
+}
+
+@media (max-width: 767.98px) {
+    .ebiz-wallet-card {
+        min-height: 180px;
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .ebiz-wallet-card__logo {
+        width: 52px;
+        min-width: 52px;
+        height: 34px;
+    }
+
+    .ebiz-wallet-card__logo-image {
+        height: auto;
+    }
+
+    .ebiz-wallet-card__default-badge {
+        gap: 6px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+
+    .ebiz-wallet-card__number {
+        gap: 12px;
+        margin-top: 22px;
+        font-size: 1.25rem;
+    }
+
+    .ebiz-wallet-card__dots {
+        gap: 6px;
+    }
+
+    .ebiz-wallet-card__dots span {
+        width: 6px;
+        height: 6px;
+    }
+
+    .ebiz-wallet-card__meta-row {
+        grid-template-columns: 22px minmax(70px, 90px) minmax(0, 1fr);
+        gap: 8px;
+        font-size: 0.78rem;
+    }
+
+    .ebiz-wallet-card__meta-icon {
+        transform: none;
+        transform-origin: left center;
+    }
+
+    .ebiz-wallet-card__actions {
+        gap: 8px;
+        padding-top: 14px;
+    }
+
+    .ebiz-wallet-card__actions .btn {
+        min-height: 34px;
+        gap: 6px;
+        padding: 0 10px;
+        font-size: 0.8rem;
+    }
+
+    .ebiz-wallet-card__actions .btn::before {
+        width: 14px;
+        min-width: 14px;
+        height: 14px;
+    }
+}
+
+@media (max-width: 420px) {
+    .ebiz-wallet-card__header,
+    .ebiz-wallet-card__actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ebiz-wallet-card__number {
+        font-size: 1.9rem;
+    }
+
+    .ebiz-wallet-card__meta-row {
+        grid-template-columns: 32px 1fr;
+    }
+
+    .ebiz-wallet-card__meta-value {
+        grid-column: 2;
+    }
+
+    .ebiz-wallet-card__actions form,
+    .ebiz-wallet-card__actions .btn {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .ebiz-wallet-card__actions .btn {
+        transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger,
+.ebiz-wallet-card__actions .btn-outline-secondary {
+    text-decoration: none;
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger:active,
+.ebiz-wallet-card__actions .btn-outline-secondary:active {
+    transform: translateY(1px);
+}
+
+.ebiz-wallet-card__actions .btn-outline-danger:focus-visible,
+.ebiz-wallet-card__actions .btn-outline-secondary:focus-visible {
+    outline: 2px solid #b2f4e0;
+    outline-offset: 3px;
+}
+
+.ebiz-add-card-frame-wrap {
+    overflow: hidden;
+    border: 1px solid #d8dde6;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.ebiz-add-card-frame {
+    display: block;
+    width: 100%;
+    min-height: 720px;
+    border: 0;
+}
+
+.ebiz-bank-methods__toggle {
+    list-style: none;
+}
+
+.ebiz-bank-methods__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.ebiz-bank-methods__panel {
+    max-width: 760px;
+    overflow: hidden;
+    border: 1px solid #d8dde6;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.ebiz-bank-methods__table {
+    margin-bottom: 0;
+}
+
+.ebiz-bank-methods__row{
+    .ebiz-bank-methods__cell {
+        padding: 1rem;
+        border: 0;
+        vertical-align: middle;
+    }
+}
+
+.ebiz-bank-methods__cell--actions {
+    text-align: right;
+}
+
+.ebiz-bank-methods__row--default .ebiz-bank-methods__cell--main {
+    border-left: 3px solid rgba(52, 211, 153, 0.85);
+}
+
+.ebiz-bank-methods__method {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.ebiz-bank-methods__logo {
+    display: inline-flex;
+    width: 52px;
+    min-width: 52px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d8dde6;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.ebiz-bank-methods__logo-text {
+    color: #2b3137;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.ebiz-bank-methods__action {
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+@media (max-width: 575.98px) {
+    .ebiz-bank-methods__table,
+    .ebiz-bank-methods__body,
+    .ebiz-bank-methods__row,
+    .ebiz-bank-methods__cell {
+        display: block;
+        width: 100%;
+    }
+
+    .ebiz-bank-methods__cell {
+        padding: 0.75rem 1rem;
+    }
+
+    .ebiz-bank-methods__cell--actions {
+        padding-top: 0;
+        text-align: left;
+    }
+}
+
+.ebiz-saved-methods-loading-overlay {
+    position: fixed;
+    z-index: 1055;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.ebiz-saved-methods-loading-overlay__box {
+    display: flex;
+    width: 100%;
+    max-width: 360px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    color: #2b3137;
+    text-align: center;
+}
+
+.ebiz-saved-methods-loading-overlay__spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #d8dde6;
+    border-top-color: #4263f9;
+    border-radius: 50%;
+    animation: ebiz-saved-methods-spin 0.8s linear infinite;
+}
+
+.ebiz-saved-methods-loading-overlay__text {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ebiz-saved-methods-confirm-modal .modal-content {
+    border-radius: 14px;
+}
+
+.ebiz-saved-methods-confirm-modal .modal-body {
+    padding: 1.5rem 1.5rem 0.75rem;
+}
+
+.ebiz-saved-methods-confirm-modal .modal-footer {
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 0;
+}
+
+.ebiz-saved-methods-confirm-modal .btn {
+    border-radius: 14px;
+}
+
+.ebiz-saved-methods-confirm-message {
+    font-weight: 600;
+    text-align: center;
+}
+
+@keyframes ebiz-saved-methods-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

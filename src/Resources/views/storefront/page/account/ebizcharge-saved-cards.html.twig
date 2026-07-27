@@ -16,10 +16,22 @@
         {% set savedAchMethods = savedPaymentMethods|filter(method => method.type|default('card') == 'ach') %}
 
         <div class="mb-4 d-flex gap-2 flex-wrap align-items-center">
-            <a href="{{ path('frontend.account.ebizcharge.saved-cards.index', { addCard: '1' }) }}" class="btn btn-primary">
+            {% if not addCardUrl %}
+            <a href="{{ path('frontend.account.ebizcharge.saved-cards.index', { addCard: '1' }) }}"
+               class="btn btn-primary"
+               data-ebiz-saved-method-add-link
+               data-ebiz-loading-message="{{ 'ebizcharge.account.loadingAddPaymentMethod'|trans|e('html_attr') }}">
                 {{ 'ebizcharge.account.addCard'|trans }}
             </a>
-
+            {% else %}
+              <a href="{{ path('frontend.account.ebizcharge.saved-cards.index') }}"
+                 class="btn btn-outline-danger"
+                 aria-label="Close payment method form"
+                 data-ebiz-saved-method-cancel-add-link
+                 data-ebiz-loading-message="{{ 'ebizcharge.account.loadingSavedPaymentMethods'|trans|e('html_attr') }}">
+                  X
+              </a>
+            {% endif %}
             {% if savedAchMethods is not empty %}
                 <details class="ebiz-bank-methods">
                     <summary class="btn btn-outline-secondary ebiz-bank-methods__toggle">
@@ -50,24 +62,46 @@
             <div class="ebiz-bank-methods__panel mb-4" hidden data-ebiz-bank-methods-panel>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0 ebiz-bank-methods__table">
-                        <tbody>
+                        <tbody class="ebiz-bank-methods__body">
                             {% for method in savedAchMethods %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ method.methodName ?: method.displayType|default('Bank account') }}</strong>
-                                        <div class="text-muted small">{{ method.brand|default('Checking') }} · {{ method.masked }}</div>
+                                {% set last4Digits = method.last4Digits|default(method.masked|default('')|slice(-4)) %}
+                                {% set accountType = method.brand|default('') %}
+                                {% if accountType is empty or accountType|lower == 'bank account' %}
+                                    {% set accountLabel = 'Bank account' %}
+                                {% else %}
+                                    {% set accountLabel = accountType ~ ' account' %}
+                                {% endif %}
+                                <tr class="ebiz-bank-methods__row{% if method.isDefault %} ebiz-bank-methods__row--default{% endif %}">
+                                    <td class="ebiz-bank-methods__cell ebiz-bank-methods__cell--main">
+                                        <div class="ebiz-bank-methods__method">
+                                            <span class="ebiz-bank-methods__logo" aria-hidden="true">
+                                                <span class="ebiz-bank-methods__logo-text">BANK</span>
+                                            </span>
+                                            <span>
+                                                <strong>{{ method.methodName ?: method.displayType|default('Bank account') }}</strong>
+                                                <span class="text-muted small d-block">{{ accountLabel }}{% if last4Digits %} ending in {{ last4Digits }}{% endif %}</span>
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="text-end">
+                                    <td class="ebiz-bank-methods__cell ebiz-bank-methods__cell--actions text-end">
                                         {% if method.isDefault %}
                                             <span class="badge bg-success me-1">{{ 'ebizcharge.account.defaultBadge'|trans }}</span>
                                         {% else %}
-                                            <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.default') }}" class="d-inline">
-                                                <input type="hidden" name="savedMethodId" value="{{ method.id }}">
-                                                <button type="submit" class="btn btn-xs btn-outline-secondary ebiz-bank-methods__action">{{ 'ebizcharge.account.setDefault'|trans }}</button>
-                                            </form>
+	                                            <form method="post"
+	                                                  action="{{ path('frontend.account.ebizcharge.saved-cards.default') }}"
+	                                                  class="d-inline"
+	                                                  data-ebiz-saved-method-default-form
+	                                                  data-ebiz-loading-message="{{ 'ebizcharge.account.updatingPaymentMethods'|trans|e('html_attr') }}">
+	                                                <input type="hidden" name="savedMethodId" value="{{ method.id }}">
+	                                                <button type="submit" class="btn btn-xs btn-outline-secondary ebiz-bank-methods__action">{{ 'ebizcharge.account.setDefault'|trans }}</button>
+	                                            </form>
                                         {% endif %}
-                                        <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.delete') }}" class="d-inline ms-1"
-                                              onsubmit="return confirm('{{ 'ebizcharge.account.deleteConfirm'|trans|e('js') }}');">
+                                        <form method="post"
+                                              action="{{ path('frontend.account.ebizcharge.saved-cards.delete') }}"
+                                              class="d-inline ms-1"
+                                              data-ebiz-saved-method-delete-form
+                                              data-ebiz-loading-message="{{ 'ebizcharge.account.removingPaymentMethod'|trans|e('html_attr') }}"
+                                              data-ebiz-confirm-message="{{ 'ebizcharge.account.deleteConfirm'|trans|e('html_attr') }}">
                                             <input type="hidden" name="savedMethodId" value="{{ method.id }}">
                                             <button type="submit" class="btn btn-xs btn-outline-danger ebiz-bank-methods__action">{{ 'ebizcharge.account.delete'|trans }}</button>
                                         </form>
@@ -86,32 +120,76 @@
             {% if savedCardMethods is not empty %}
                 <div class="row g-3">
                     {% for method in savedCardMethods %}
+                        {% set last4Digits = method.last4Digits|default(method.masked|default('')|slice(-4)) %}
+                        {% set displayExpiry = method.expiry|default('') %}
+                        {% set brandKey = method.brandKey|default('card') %}
                         <div class="col-12 col-md-6 col-lg-4">
-                            <div class="ebiz-wallet-card{% if method.isDefault %} ebiz-wallet-card--default{% endif %}">
-                                <div class="ebiz-wallet-card__brand">{{ method.brand|default(method.displayType|default('Payment method')) }}</div>
-                                <div class="ebiz-wallet-card__number">{{ method.masked|default('Saved payment method') }}</div>
-                                <div class="ebiz-wallet-card__meta">
-                                    {% if method.expiry %}
-                                        <span>{{ 'ebizcharge.account.expires'|trans }} {{ method.expiry }}</span>
-                                    {% endif %}
-                                    {% if method.methodName %}
-                                        <span class="d-block text-truncate">{{ method.methodName }}</span>
+                            <div class="ebiz-wallet-card ebiz-wallet-card--{{ brandKey }}{% if method.isDefault %} ebiz-wallet-card--default{% endif %}">
+                                <div class="ebiz-wallet-card__header">
+                                    <span class="ebiz-wallet-card__logo" aria-hidden="true">
+                                        {% if brandKey in ['visa', 'mastercard', 'amex', 'discover'] %}
+                                            <img
+                                                class="ebiz-wallet-card__logo-image"
+                                                src="{{ asset('bundles/ebizchargeshopware/storefront/assets/payment/logo/' ~ brandKey ~ '-logo.svg') }}"
+                                                alt=""
+                                                loading="lazy">
+                                        {% else %}
+                                            <span class="ebiz-wallet-card__logo-text">CARD</span>
+                                        {% endif %}
+                                    </span>
+                                    {% if method.isDefault %}
+                                        <span class="ebiz-wallet-card__default-badge">
+                                            <span class="ebiz-wallet-card__default-icon" aria-hidden="true"></span>
+                                            {{ 'ebizcharge.account.defaultBadge'|trans }}
+                                        </span>
                                     {% endif %}
                                 </div>
-                                {% if method.isDefault %}
-                                    <span class="ebiz-wallet-card__default-badge">{{ 'ebizcharge.account.defaultBadge'|trans }}</span>
-                                {% endif %}
+                                <div class="ebiz-wallet-card__number" aria-label="{{ method.brand|default('Card') }}{% if last4Digits %} ending in {{ last4Digits }}{% endif %}">
+                                    <span class="ebiz-wallet-card__dots" aria-hidden="true">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </span>
+                                    {% if last4Digits %}
+                                        <span class="ebiz-wallet-card__last4">{{ last4Digits }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="ebiz-wallet-card__meta">
+                                    {% if displayExpiry %}
+                                        <div class="ebiz-wallet-card__meta-row">
+                                            <span class="ebiz-wallet-card__meta-icon ebiz-wallet-card__meta-icon--expiry" aria-hidden="true"></span>
+                                            <span class="ebiz-wallet-card__meta-label">{{ 'ebizcharge.account.expires'|trans }}</span>
+                                            <span class="ebiz-wallet-card__meta-value">{{ displayExpiry }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if method.methodName %}
+                                        <div class="ebiz-wallet-card__meta-row">
+                                            <span class="ebiz-wallet-card__meta-icon ebiz-wallet-card__meta-icon--holder" aria-hidden="true"></span>
+                                            <span class="ebiz-wallet-card__meta-label">{{ 'ebizcharge.account.cardholder'|trans }}</span>
+                                            <span class="ebiz-wallet-card__meta-value ebiz-wallet-card__name text-truncate">{{ method.methodName }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
                                 <div class="ebiz-wallet-card__actions mt-3">
                                     {% if not method.isDefault %}
-                                        <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.default') }}" class="d-inline">
-                                            <input type="hidden" name="savedMethodId" value="{{ method.id }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary">{{ 'ebizcharge.account.setDefault'|trans }}</button>
-                                        </form>
+	                                        <form method="post"
+	                                              action="{{ path('frontend.account.ebizcharge.saved-cards.default') }}"
+	                                              class="d-inline"
+	                                              data-ebiz-saved-method-default-form
+	                                              data-ebiz-loading-message="{{ 'ebizcharge.account.updatingPaymentMethods'|trans|e('html_attr') }}">
+	                                            <input type="hidden" name="savedMethodId" value="{{ method.id }}">
+	                                            <button type="submit" class="btn btn-sm btn-outline-secondary">{{ 'ebizcharge.account.setDefault'|trans }}</button>
+	                                        </form>
                                     {% endif %}
-                                    <form method="post" action="{{ path('frontend.account.ebizcharge.saved-cards.delete') }}" class="d-inline ms-1"
-                                          onsubmit="return confirm('{{ 'ebizcharge.account.deleteConfirm'|trans|e('js') }}');">
+                                    <form method="post"
+                                          action="{{ path('frontend.account.ebizcharge.saved-cards.delete') }}"
+                                          class="d-inline ms-1"
+                                          data-ebiz-saved-method-delete-form
+                                          data-ebiz-loading-message="{{ 'ebizcharge.account.removingPaymentMethod'|trans|e('html_attr') }}"
+                                          data-ebiz-confirm-message="{{ 'ebizcharge.account.deleteConfirm'|trans|e('html_attr') }}">
                                         <input type="hidden" name="savedMethodId" value="{{ method.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'ebizcharge.account.delete'|trans }}</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'ebizcharge.account.removeCard'|trans }}</button>
                                     </form>
                                 </div>
                             </div>
@@ -120,5 +198,36 @@
                 </div>
             {% endif %}
         {% endif %}
+
+        <div class="modal fade ebiz-saved-methods-confirm-modal"
+             id="ebizSavedMethodDeleteConfirmModal"
+             tabindex="-1"
+             aria-hidden="true"
+             data-ebiz-delete-confirm-modal>
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <p class="ebiz-saved-methods-confirm-message mb-0" data-ebiz-delete-confirm-message>
+                            {{ 'ebizcharge.account.deleteConfirm'|trans|sw_sanitize }}
+                        </p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal"
+                                data-ebiz-delete-confirm-cancel>
+                            {{ 'ebizcharge.account.deleteCancel'|trans|sw_sanitize }}
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-danger"
+                                data-ebiz-delete-confirm-submit>
+                            {{ 'ebizcharge.account.deleteConfirmAction'|trans|sw_sanitize }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
