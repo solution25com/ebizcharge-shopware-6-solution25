@@ -1,10 +1,14 @@
 <div>
     <sw-button-process
         :is-loading="isLoading"
-        :process-success="isSaveSuccessful"
-        @process-finish="saveFinish"
+        :process-success="false"
         @click="check"
     >
+        <mt-icon
+            v-if="isSaveSuccessful"
+            name="regular-checkmark-xs"
+            size="12px"
+        />
         {{ buttonLabel }}
     </sw-button-process>
 </div>

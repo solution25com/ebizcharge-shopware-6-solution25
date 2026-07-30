@@ -23,10 +23,6 @@ Component.register('ebizcharge-api-test', {
     },
 
     methods: {
-        saveFinish() {
-            this.isSaveSuccessful = false;
-        },
-
         getCurrentSalesChannelId() {
             let parent = this.$parent;
 
@@ -39,6 +35,7 @@ Component.register('ebizcharge-api-test', {
 
         async check() {
             this.isLoading = true;
+            this.isSaveSuccessful = false;
 
             try {
                 const result = await this.ebizchargeAdminService.testConnection(this.getCurrentSalesChannelId());
