@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4] - 2026-07-30
+### Fixed
+- Removed invalid clear button from order status dropdowns
+
+### Changed
+- Added confirmation message on successful API connection test
+
 ## [1.0.3] - 2026-07-27
 ### Changed
 - Redesigned saved payment method UI at checkout and in the account section with card and ACH styling, brand logos, last 4 digits display, and method name labels
