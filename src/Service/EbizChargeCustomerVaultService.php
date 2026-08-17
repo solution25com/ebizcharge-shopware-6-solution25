@@ -12,6 +12,7 @@ use EbizChargeShopware\Provider\ProviderOperation;
 use EbizChargeShopware\Provider\Response\ResponseNormalizer;
 use EbizChargeShopware\Service\Checkout\OrderTransactionLoader;
 use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\PluginConfig;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
@@ -107,6 +108,18 @@ final class EbizChargeCustomerVaultService
     public function findVaultForCustomerId(string $customerId, string $salesChannelId, Context $context): ?EbizchargeVaultedCustomerEntity
     {
         return $this->findVault($customerId, $salesChannelId, $context);
+    }
+
+    public function findUsableVaultForCustomerId(string $customerId, string $salesChannelId, Context $context): ?EbizchargeVaultedCustomerEntity
+    {
+        $customerVault = $this->findVault($customerId, $salesChannelId, $context);
+        if ($customerVault === null) {
+            return null;
+        }
+
+        $customerToken = trim((string) $customerVault->getEbizCustomerToken());
+
+        return $customerToken === '' ? null : $customerVault;
     }
 
     /**
@@ -437,7 +450,7 @@ final class EbizChargeCustomerVaultService
             ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId))
             ->setLimit(1);
 
-        $entity = $this->vaultedCustomerRepository->search($criteria, $context)->first();
+        $entity = DalSearchResultHelper::first($this->vaultedCustomerRepository->search($criteria, $context));
 
         return $entity instanceof EbizchargeVaultedCustomerEntity ? $entity : null;
     }
@@ -446,7 +459,7 @@ final class EbizChargeCustomerVaultService
     {
         $criteria = (new Criteria([$customerId]))->addAssociation('defaultBillingAddress.country');
         $criteria->addAssociation('defaultBillingAddress.countryState');
-        $customer = $this->customerRepository->search($criteria, $context)->first();
+        $customer = DalSearchResultHelper::first($this->customerRepository->search($criteria, $context));
         if (!$customer instanceof CustomerEntity) {
             throw new \RuntimeException('Customer not found.');
         }

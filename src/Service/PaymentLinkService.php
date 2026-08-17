@@ -10,6 +10,7 @@ use EbizChargeShopware\Provider\ProviderContract;
 use EbizChargeShopware\Service\Checkout\HostedCheckoutService;
 use EbizChargeShopware\Service\Checkout\OrderTransactionLoader;
 use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Content\Mail\Service\MailService;
 use Shopware\Core\Content\MailTemplate\MailTemplateEntity;
@@ -39,16 +40,16 @@ final class PaymentLinkService
         $criteria = (new Criteria([$orderTransactionId]))->addAssociation('paymentMethod');
 
         /** @var OrderTransactionEntity|null $transaction */
-        $transaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $transaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
 
         return $transaction?->getPaymentMethod()?->getHandlerIdentifier() === PayByLinkPaymentHandler::class;
     }
 
     public function findByOrderTransactionId(string $orderTransactionId, Context $context): ?array
     {
-        $entity = $this->paymentLinkRepository
-            ->search(new Criteria([$orderTransactionId]), $context)
-            ->first();
+        $entity = DalSearchResultHelper::first(
+            $this->paymentLinkRepository->search(new Criteria([$orderTransactionId]), $context)
+        );
 
         if (!$entity instanceof EbizchargePaymentLinkEntity) {
             return null;
@@ -82,7 +83,7 @@ final class PaymentLinkService
         $baseUrl = $request ? $request->getSchemeAndHttpHost() : '';
 
         $returnUrl = $baseUrl . '/ebizcharge-payment-link-return?transactionId=' . urlencode($orderTransactionId);
-        $redirect = $this->hostedCheckoutService->start($orderData, $config, $returnUrl, $context, formType: ProviderContract::EMAIL_FORM_TYPE);
+        $redirect = $this->hostedCheckoutService->start($orderData, $config, $returnUrl, $context, formType: ProviderContract::PAY_LINK_ONLY_FORM_TYPE);
 
         $this->paymentLinkRepository->upsert([
             [
@@ -105,7 +106,7 @@ final class PaymentLinkService
         $criteria->setLimit(1);
 
         /** @var MailTemplateEntity|null $mailTemplate */
-        $mailTemplate = $this->mailTemplateRepository->search($criteria, $context)->first();
+        $mailTemplate = DalSearchResultHelper::first($this->mailTemplateRepository->search($criteria, $context));
 
         if ($mailTemplate === null) {
             throw new \RuntimeException(

@@ -10,6 +10,7 @@ final class ProviderContract
     public const WEBFORM_TYPE = 'Webform';
     public const WEBFORM_PM_REQUEST_FORM = 'PmRequestForm';
     public const EMAIL_FORM_TYPE = 'EmailForm';
+    public const PAY_LINK_ONLY_FORM_TYPE = 'PayLinkOnly';
     public const PAY_BY_TYPE_CREDIT_CARD = 'CC';
     public const PAY_BY_TYPE_ACH = 'ACH';
     public const PAY_BY_TYPE_CREDIT_CARD_AND_ACH = 'CC,ACH';

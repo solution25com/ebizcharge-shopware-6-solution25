@@ -105,6 +105,7 @@
         <service id="EbizChargeShopware\Subscriber\OrderTransactionStateSubscriber">
             <argument type="service" id="EbizChargeShopware\Service\EbizChargeApiClient"/>
             <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="order_transaction.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

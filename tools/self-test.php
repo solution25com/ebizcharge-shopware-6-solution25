@@ -22,6 +22,7 @@ use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Connection\ConnectionTestService;
 use EbizChargeShopware\Service\Finalize\BrowserReturnParser;
 use EbizChargeShopware\Service\Finalize\FinalizationService;
+use EbizChargeShopware\Service\EbizChargeApiClient;
 use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use EbizChargeShopware\Service\PaymentLinkService;
 use EbizChargeShopware\Service\StateSync\StateTransitionPolicy;
@@ -147,9 +148,18 @@ function makeTransactionRecordStore(): DalTransactionRecordStore
                 {
                 }
 
-                public function first(): mixed
+                public function getEntities(): object
                 {
-                    return reset($this->entities) ?: null;
+                    return new class($this->entities) {
+                        public function __construct(private array $entities)
+                        {
+                        }
+
+                        public function first(): mixed
+                        {
+                            return reset($this->entities) ?: null;
+                        }
+                    };
                 }
             };
         }
@@ -172,25 +182,34 @@ function makeStateRepository(?string $currentState): EntityRepository
                 {
                 }
 
-                public function first(): mixed
+                public function getEntities(): object
                 {
-                    if ($this->currentState === null) {
-                        return null;
-                    }
-
-                    $entity = new OrderTransactionEntity();
-                    $entity->setStateMachineState(new class($this->currentState) {
-                        public function __construct(private string $state)
+                    return new class($this->currentState) {
+                        public function __construct(private ?string $currentState)
                         {
                         }
 
-                        public function getTechnicalName(): string
+                        public function first(): mixed
                         {
-                            return $this->state;
-                        }
-                    });
+                            if ($this->currentState === null) {
+                                return null;
+                            }
 
-                    return $entity;
+                            $entity = new OrderTransactionEntity();
+                            $entity->setStateMachineState(new class($this->currentState) {
+                                public function __construct(private string $state)
+                                {
+                                }
+
+                                public function getTechnicalName(): string
+                                {
+                                    return $this->state;
+                                }
+                            });
+
+                            return $entity;
+                        }
+                    };
                 }
             };
         }
@@ -267,9 +286,9 @@ $tests['payment-method-installer-create-update-deactivate'] = static function ()
     same('EBizCharge ACH', $repository->created[1][0]['name'], 'ACH payment method name mismatch.');
 
     $installer->ensurePaymentMethod('plugin-id', $context, true);
-    same(true, $repository->updated[0][0]['active'], 'Payment method update should accept active=true.');
+    ok(!array_key_exists('active', $repository->updated[0][0]), 'Payment method update should preserve existing active state.');
     same(true, $repository->updated[0][0]['afterOrderEnabled'], 'Payment method update should keep after-order enabled for checkout retry.');
-    same(true, $repository->updated[1][0]['active'], 'ACH payment method update should accept active=true.');
+    ok(!array_key_exists('active', $repository->updated[1][0]), 'ACH payment method update should preserve existing active state.');
     same(true, $repository->updated[1][0]['afterOrderEnabled'], 'ACH payment method update should keep after-order enabled for checkout retry.');
 
     $installer->setPaymentMethodActive(false, $context);
@@ -288,6 +307,34 @@ $tests['builder-hosted-payment-method-payload'] = static function (): void {
     same('https://shop.test/payment/finalize-transaction', $payload['ePaymentForm']['approvedURL'], 'Approved URL mismatch.');
     ok(!array_key_exists('currency', $payload['ePaymentForm']), 'Currency must not be sent in hosted webform payload.');
     ok(!array_key_exists('allowPartialAuth', $payload['ePaymentForm']), 'allowPartialAuth must not be sent.');
+};
+
+$tests['saved-customer-transaction-payload-uses-rest-amount-and-ach-command'] = static function (): void {
+    $reflection = new ReflectionClass(EbizChargeApiClient::class);
+    $service = $reflection->newInstanceWithoutConstructor();
+    $buildPayload = $reflection->getMethod('buildCustomerTransactionPayload');
+
+    $payload = $buildPayload->invoke($service, baseOrderData(['shippingAmount' => 5.0]), baseConfig(), null);
+    $achPayload = $buildPayload->invoke($service, baseOrderData(['shippingAmount' => 5.0]), baseConfig(), null, 'Check');
+
+    same(false, $payload['isRecurring'], 'Saved-customer transaction recurring flag mismatch.');
+    same('', $payload['InventoryLocation'], 'Saved-customer transaction inventory location mismatch.');
+    same(false, $payload['IgnoreDuplicate'], 'Saved-customer transaction duplicate flag mismatch.');
+    same('Sale', $payload['command'], 'Saved-customer transaction command mismatch.');
+    same('Check', $achPayload['command'], 'Saved ACH transaction command mismatch.');
+    ok(!array_key_exists('Details', $payload), 'Saved-customer transaction must not send SOAP Details key.');
+    ok(!array_key_exists('Command', $payload), 'Saved-customer transaction must not send SOAP Command key.');
+    ok(!array_key_exists('LineItems', $payload), 'Saved-customer transaction must not send SOAP LineItems key.');
+    ok(!array_key_exists('CardCode', $payload), 'Saved-customer transaction must omit blank card code.');
+
+    same(50.0, $payload['details']['amount'], 'Saved-customer transaction amount must be sent in REST details.amount.');
+    same(40.0, $payload['details']['subtotal'], 'Saved-customer transaction REST subtotal mismatch.');
+    same(5.0, $payload['details']['tax'], 'Saved-customer transaction tax mismatch.');
+    same(5.0, $payload['details']['shipping'], 'Saved-customer transaction shipping mismatch.');
+    same(false, $payload['details']['allowPartialAuth'], 'Saved-customer transaction REST partial auth flag mismatch.');
+    same('transaction-id', $payload['details']['sessionID'], 'Saved-customer transaction session id mismatch.');
+    same('SKU1', $payload['lineItems'][0]['sKU'], 'Saved-customer transaction REST line item SKU mismatch.');
+    same(true, $payload['lineItems'][0]['taxable'], 'Saved-customer transaction taxable flag mismatch.');
 };
 
 $tests['normalizer-extracts-hosted-url-and-payment'] = static function (): void {
@@ -629,15 +676,65 @@ $tests['dal-transaction-record-store-merges-upserts'] = static function (): void
 
 $tests['finalization-service-verifies-approved-return'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
+        /** @var list<ProviderOperation> */
+        public array $operations = [];
+
+        /** @var list<array<string, mixed>> */
+        public array $payloads = [];
+
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            same(ProviderOperation::SEARCH_RECEIVED_PAYMENTS, $operation, 'Approved return without refNum should search received payments.');
+            $this->operations[] = $operation;
+            $this->payloads[] = $payload;
+
+            if ($operation === ProviderOperation::GET_TRANSACTION_DETAILS) {
+                return [
+                    'statusCode' => 200,
+                    'body' => [
+                        'getTransactionDetailsResponse' => [
+                            'getTransactionDetailsResult' => [
+                                'RefNum' => '3177716774',
+                                'AuthCode' => '505998',
+                                'Status' => 'Approved',
+                                'AuthAmount' => 50.0,
+                                'PaymentType' => 'Sale',
+                                'PaymentMethod' => 'Visa',
+                                'TransactionLookupKey' => 'transaction-id',
+                                'response' => [
+                                    'RefNum' => '3177716774',
+                                    'AuthCode' => '505998',
+                                    'Status' => 'Approved',
+                                    'AuthAmount' => 50.0,
+                                ],
+                                'details' => [
+                                    'amount' => 50.0,
+                                ],
+                                'transactionType' => 'Sale',
+                                'creditCardData' => [
+                                    'cardNumber' => '4111111111111111',
+                                    'cardType' => 'V',
+                                ],
+                            ],
+                        ],
+                    ],
+                    'rawBody' => '{}',
+                ];
+            }
+
+            if ($operation === ProviderOperation::MARK_WEBFORM_PAYMENT_APPLIED) {
+                return [
+                    'statusCode' => 200,
+                    'body' => ['ok' => true],
+                    'rawBody' => '{}',
+                ];
+            }
 
             return [
                 'statusCode' => 200,
                 'body' => [
                     'searchEbizWebFormReceivedPaymentsResponse' => [
                         'searchEbizWebFormReceivedPaymentsResult' => [[
+                            'paymentInternalId' => 'payment-internal-id',
                             'RefNum' => '3177716774',
                             'AuthCode' => '505998',
                             'PaymentType' => 'Sale',
@@ -688,40 +785,84 @@ $tests['finalization-service-verifies-approved-return'] = static function (): vo
     same(OrderTransactionStates::STATE_PAID, $outcome->targetShopwareState, 'Finalize target state mismatch.');
     same(['paid', 'transaction-id'], $stateHandler->transitions[0], 'State handler should receive paid transition.');
     same('3177716774', $store->find('transaction-id', new Context())['provider_ref_num'], 'Stored provider reference mismatch.');
+    same([
+        ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
+        ProviderOperation::GET_TRANSACTION_DETAILS,
+        ProviderOperation::MARK_WEBFORM_PAYMENT_APPLIED,
+    ], $providerClient->operations, 'Approved search result should verify details and mark the web-form payment as applied.');
+    same('payment-internal-id', $providerClient->payloads[2]['paymentInternalId'], 'Mark-applied payload should use the search payment internal id.');
 };
 
 $tests['finalization-service-uses-ach-return-refnum'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
+        /** @var list<ProviderOperation> */
+        public array $operations = [];
+
+        /** @var list<array<string, mixed>> */
+        public array $payloads = [];
+
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            same(ProviderOperation::GET_TRANSACTION_DETAILS, $operation, 'ACH return with TranRefNum should verify by transaction details.');
+            $this->operations[] = $operation;
+            $this->payloads[] = $payload;
 
-            return [
-                'statusCode' => 200,
-                'body' => [
-                    'getTransactionDetailsResponse' => [
-                        'getTransactionDetailsResult' => [
-                            'RefNum' => '3229484286',
-                            'AuthCode' => '000000',
-                            'Status' => 'Approved',
-                            'AuthAmount' => 46.84,
-                            'PaymentType' => 'Sale',
-                            'PaymentMethod' => 'ACH',
-                            'TransactionLookupKey' => 'transaction-id',
-                            'response' => [
+            if ($operation === ProviderOperation::GET_TRANSACTION_DETAILS) {
+                return [
+                    'statusCode' => 200,
+                    'body' => [
+                        'getTransactionDetailsResponse' => [
+                            'getTransactionDetailsResult' => [
                                 'RefNum' => '3229484286',
                                 'AuthCode' => '000000',
                                 'Status' => 'Approved',
                                 'AuthAmount' => 46.84,
+                                'PaymentType' => 'Sale',
+                                'PaymentMethod' => 'ACH',
+                                'TransactionLookupKey' => 'transaction-id',
+                                'response' => [
+                                    'RefNum' => '3229484286',
+                                    'AuthCode' => '000000',
+                                    'Status' => 'Approved',
+                                    'AuthAmount' => 46.84,
+                                ],
+                                'details' => [
+                                    'amount' => 46.84,
+                                ],
+                                'transactionType' => 'Sale',
+                                'checkData' => [],
                             ],
-                            'details' => [
-                                'amount' => 46.84,
-                            ],
-                            'transactionType' => 'Sale',
-                            'checkData' => [],
                         ],
                     ],
-                ],
+                    'rawBody' => '{}',
+                ];
+            }
+
+            if ($operation === ProviderOperation::SEARCH_RECEIVED_PAYMENTS) {
+                return [
+                    'statusCode' => 200,
+                    'body' => [
+                        'searchEbizWebFormReceivedPaymentsResponse' => [
+                            'SearchEbizWebFormReceivedPaymentsResult' => [[
+                                'PaymentInternalId' => 'payment-internal-id',
+                                'RefNum' => '3229484286',
+                                'PaymentType' => 'Sale',
+                                'PaymentMethod' => 'ACH',
+                                'DatePaid' => '2026-08-12T13:52:44',
+                                'PaidAmount' => 46.84,
+                                'Currency' => 'USD',
+                                'TransactionLookupKey' => 'transaction-id',
+                            ]],
+                        ],
+                    ],
+                    'rawBody' => '{}',
+                ];
+            }
+
+            same(ProviderOperation::MARK_WEBFORM_PAYMENT_APPLIED, $operation, 'Approved refNum return should mark the web-form payment as applied.');
+
+            return [
+                'statusCode' => 200,
+                'body' => ['ok' => true],
                 'rawBody' => '{}',
             ];
         }
@@ -764,6 +905,12 @@ $tests['finalization-service-uses-ach-return-refnum'] = static function (): void
 
     same(ProviderOperationResult::OUTCOME_APPROVED, $outcome->result->outcome, 'ACH return should verify as approved.');
     same('3229484286', $store->find('transaction-id', new Context())['provider_ref_num'], 'ACH provider reference mismatch.');
+    same([
+        ProviderOperation::GET_TRANSACTION_DETAILS,
+        ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
+        ProviderOperation::MARK_WEBFORM_PAYMENT_APPLIED,
+    ], $providerClient->operations, 'Approved refNum return should look up and mark the web-form payment as applied.');
+    same('payment-internal-id', $providerClient->payloads[2]['paymentInternalId'], 'Mark-applied payload should use the received payment internal id.');
 };
 
 $tests['finalization-service-does-not-trust-browser-decline-without-provider-verification'] = static function (): void {
@@ -813,9 +960,40 @@ $tests['finalization-service-does-not-trust-browser-decline-without-provider-ver
 
 $tests['finalization-service-allows-provider-verified-cancel'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
+        /** @var list<ProviderOperation> */
+        public array $operations = [];
+
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            same(ProviderOperation::SEARCH_RECEIVED_PAYMENTS, $operation, 'Cancelled return without refNum should search received payments.');
+            $this->operations[] = $operation;
+
+            if ($operation === ProviderOperation::GET_TRANSACTION_DETAILS) {
+                return [
+                    'statusCode' => 200,
+                    'body' => [
+                        'getTransactionDetailsResponse' => [
+                            'getTransactionDetailsResult' => [
+                                'RefNum' => '3177716774',
+                                'Status' => 'Cancelled',
+                                'AuthAmount' => 50.0,
+                                'PaymentType' => 'Sale',
+                                'PaymentMethod' => 'Visa',
+                                'TransactionLookupKey' => 'transaction-id',
+                                'response' => [
+                                    'RefNum' => '3177716774',
+                                    'Status' => 'Cancelled',
+                                    'AuthAmount' => 50.0,
+                                ],
+                                'details' => [
+                                    'amount' => 50.0,
+                                ],
+                                'transactionType' => 'Sale',
+                            ],
+                        ],
+                    ],
+                    'rawBody' => '{}',
+                ];
+            }
 
             return [
                 'statusCode' => 200,
@@ -872,6 +1050,10 @@ $tests['finalization-service-allows-provider-verified-cancel'] = static function
     ok(!$outcome->throwInterrupted, 'Verified cancel should not use the interrupted path.');
     ok($outcome->throwCustomerCancelled, 'Verified cancel should use the customer-cancelled path.');
     same(['cancel', 'transaction-id'], $stateHandler->transitions[0], 'Verified cancel should transition the order transaction to cancelled.');
+    same([
+        ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
+        ProviderOperation::GET_TRANSACTION_DETAILS,
+    ], $providerClient->operations, 'Verified cancel should not mark a web-form payment as applied.');
 };
 
 $tests['finalization-service-rejects-provider-amount-mismatch'] = static function (): void {

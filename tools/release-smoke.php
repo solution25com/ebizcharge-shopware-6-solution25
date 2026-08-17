@@ -40,6 +40,14 @@ foreach ($listing as $entry) {
     }
 }
 
+$manifestPath = $root . '/src/Resources/public/administration/.vite/manifest.json';
+$manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+$adminEntry = $manifest['main.js']['file'] ?? null;
+if (!is_string($adminEntry) || $adminEntry === '') {
+    fwrite(STDERR, "Could not resolve administration entry from Vite manifest.\n");
+    exit(1);
+}
+
 $tmpDir = sys_get_temp_dir() . '/ebizcharge-release-smoke-' . bin2hex(random_bytes(4));
 if (!mkdir($tmpDir, 0777, true) && !is_dir($tmpDir)) {
     fwrite(STDERR, "Could not create temp directory {$tmpDir}\n");
@@ -91,7 +99,7 @@ $requiredFiles = [
     $pluginRoot . '/src/Resources/config/services/core.xml',
     $pluginRoot . '/src/Resources/config/services/controllers.xml',
     $pluginRoot . '/src/Resources/config/services/commands.xml',
-    $pluginRoot . '/src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js',
+    $pluginRoot . '/src/Resources/public/administration/' . $adminEntry,
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -111,7 +119,7 @@ $comparisonPairs = [
     'src/Resources/config/services/core.xml' => 'src/Resources/config/services/core.xml',
     'src/Resources/config/services/controllers.xml' => 'src/Resources/config/services/controllers.xml',
     'src/Resources/config/services/commands.xml' => 'src/Resources/config/services/commands.xml',
-    'src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js' => 'src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js',
+    'src/Resources/public/administration/' . $adminEntry => 'src/Resources/public/administration/' . $adminEntry,
 ];
 
 foreach ($comparisonPairs as $sourceRelative => $archiveRelative) {

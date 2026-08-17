@@ -8,79 +8,79 @@ use EbizChargeShopware\Checkout\Payment\Handler\AchPaymentHandler;
 use EbizChargeShopware\Checkout\Payment\Handler\CreditCardPaymentHandler;
 use EbizChargeShopware\Checkout\Payment\Handler\PayByLinkPaymentHandler;
 use EbizChargeShopware\Service\EbizChargeApiClient;
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
-use Shopware\Core\Checkout\Order\Event\OrderStateMachineStateChangeEvent;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\System\StateMachine\Event\StateMachineStateChangeEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 final class OrderTransactionStateSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly EbizChargeApiClient $apiClient,
-        private readonly TransactionRecordStoreInterface $transactionRecordStore
+        private readonly TransactionRecordStoreInterface $transactionRecordStore,
+        private readonly EntityRepository $orderTransactionRepository
     ) {
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            'state_enter.order_transaction.state.paid' => 'onPaid',
-            'state_enter.order_transaction.state.cancelled' => 'onCancelled',
-            'state_enter.order_transaction.state.refunded' => 'onRefunded',
+            'state_machine.order_transaction.state_changed' => 'onStateChanged',
         ];
     }
 
-    public function onPaid(OrderStateMachineStateChangeEvent $event): void
+    public function onStateChanged(StateMachineStateChangeEvent $event): void
     {
-        $transactionId = $this->getEbizChargeTransactionId($event);
-
-        if ($transactionId === null || $this->shouldSkipProviderCall($transactionId, OrderTransactionStates::STATE_PAID, $event->getContext())) {
+        if ($event->getTransitionSide() !== StateMachineStateChangeEvent::STATE_MACHINE_TRANSITION_SIDE_ENTER) {
             return;
         }
 
-        $this->apiClient->capture($transactionId, $event->getContext());
-    }
-
-    public function onCancelled(OrderStateMachineStateChangeEvent $event): void
-    {
-        $transactionId = $this->getEbizChargeTransactionId($event);
-
-        if ($transactionId === null || $this->shouldSkipProviderCall($transactionId, OrderTransactionStates::STATE_CANCELLED, $event->getContext())) {
+        $targetState = $event->getNextState()->getTechnicalName();
+        if (
+            !\in_array($targetState, [
+            OrderTransactionStates::STATE_PAID,
+            OrderTransactionStates::STATE_CANCELLED,
+            OrderTransactionStates::STATE_REFUNDED,
+            ], true)
+        ) {
             return;
         }
 
-        $this->apiClient->void($transactionId, $event->getContext());
-    }
+        $transactionId = $event->getTransition()->getEntityId();
+        if (!$this->isEbizChargeTransaction($transactionId, $event->getContext()) || $this->shouldSkipProviderCall($transactionId, $targetState, $event->getContext())) {
+            return;
+        }
 
-    public function onRefunded(OrderStateMachineStateChangeEvent $event): void
-    {
-        $transactionId = $this->getEbizChargeTransactionId($event);
+        if ($targetState === OrderTransactionStates::STATE_PAID) {
+            $this->apiClient->capture($transactionId, $event->getContext());
 
-        if ($transactionId === null || $this->shouldSkipProviderCall($transactionId, OrderTransactionStates::STATE_REFUNDED, $event->getContext())) {
+            return;
+        }
+
+        if ($targetState === OrderTransactionStates::STATE_CANCELLED) {
+            $this->apiClient->void($transactionId, $event->getContext());
+
             return;
         }
 
         $this->apiClient->refund($transactionId, $event->getContext());
     }
 
-    private function getEbizChargeTransactionId(OrderStateMachineStateChangeEvent $event): ?string
+    private function isEbizChargeTransaction(string $orderTransactionId, Context $context): bool
     {
-        $transactions = $event->getOrder()->getTransactions();
+        $criteria = (new Criteria([$orderTransactionId]))->addAssociation('paymentMethod');
 
-        if ($transactions === null) {
-            return null;
-        }
+        /** @var OrderTransactionEntity|null $transaction */
+        $transaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
 
-        $ebizHandlers = [CreditCardPaymentHandler::class, AchPaymentHandler::class, PayByLinkPaymentHandler::class];
+        $handler = $transaction?->getPaymentMethod()?->getHandlerIdentifier();
 
-        foreach ($transactions as $transaction) {
-            if (in_array($transaction->getPaymentMethod()?->getHandlerIdentifier(), $ebizHandlers, true)) {
-                return $transaction->getId();
-            }
-        }
-
-        return null;
+        return \in_array($handler, [CreditCardPaymentHandler::class, AchPaymentHandler::class, PayByLinkPaymentHandler::class], true);
     }
 
     private function shouldSkipProviderCall(string $orderTransactionId, string $targetState, Context $context): bool

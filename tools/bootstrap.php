@@ -532,9 +532,14 @@ namespace Shopware\Core\Framework\DataAbstractionLayer {
             public function search(object $criteria, object $context): object
             {
                 return new class {
-                    public function first(): mixed
+                    public function getEntities(): object
                     {
-                        return null;
+                        return new class {
+                            public function first(): mixed
+                            {
+                                return null;
+                            }
+                        };
                     }
                 };
             }

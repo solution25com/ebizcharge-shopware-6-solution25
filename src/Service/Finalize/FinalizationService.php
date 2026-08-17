@@ -12,6 +12,7 @@ use EbizChargeShopware\Provider\Request\GetTransactionDetailsRequestBuilder;
 use EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder;
 use EbizChargeShopware\Provider\Response\ResponseNormalizer;
 use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\FinalizationOutcome;
@@ -138,7 +139,7 @@ final class FinalizationService
                     $referenceNumber,
                     $config->enforceAvsCheck()
                 ),
-                'paymentInternalId' => null,
+                'paymentInternalId' => $this->lookupWebFormPaymentInternalId($orderData, $config, $context, $formType, $referenceNumber),
             ];
         }
 
@@ -154,8 +155,8 @@ final class FinalizationService
             $context
         );
 
-        $searchResult = $response['body']['searchEbizWebFormReceivedPaymentsResponse']['SearchEbizWebFormReceivedPaymentsResult'][0] ?? [];
-        $referenceNumber = is_array($searchResult) ? trim((string) ($searchResult['RefNum'] ?? $searchResult['refNum'] ?? '')) : '';
+        $searchResult = $this->searchResult($response['body']) ?? [];
+        $referenceNumber = trim((string) ($searchResult['RefNum'] ?? $searchResult['refNum'] ?? ''));
         $paymentInternalId = $searchResult['PaymentInternalId'] ?? $searchResult['paymentInternalId'] ?? null;
 
         if ($referenceNumber !== '') {
@@ -189,6 +190,78 @@ final class FinalizationService
         ];
     }
 
+    private function lookupWebFormPaymentInternalId(
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        Context $context,
+        string $formType,
+        string $referenceNumber
+    ): ?string {
+        try {
+            $response = $this->providerClient->send(
+                ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
+                $this->searchReceivedPaymentsRequestBuilder->build($orderData->orderTransactionId, $orderData, $config, $formType),
+                $config
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->warning('EBizCharge web-form payment lookup failed before mark-applied.', [
+                'orderTransactionId' => $orderData->orderTransactionId,
+                'providerReference' => $referenceNumber,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $searchResult = $this->searchResult($response['body'], $referenceNumber);
+
+        if ($searchResult === null) {
+            return null;
+        }
+
+        $paymentInternalId = $searchResult['PaymentInternalId'] ?? $searchResult['paymentInternalId'] ?? null;
+        if (!is_scalar($paymentInternalId)) {
+            return null;
+        }
+
+        $paymentInternalId = trim((string) $paymentInternalId);
+
+        return $paymentInternalId === '' ? null : $paymentInternalId;
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     *
+     * @return array<string, mixed>|null
+     */
+    private function searchResult(array $body, ?string $referenceNumber = null): ?array
+    {
+        $results = $body['searchEbizWebFormReceivedPaymentsResponse']['SearchEbizWebFormReceivedPaymentsResult']
+            ?? $body['searchEbizWebFormReceivedPaymentsResponse']['searchEbizWebFormReceivedPaymentsResult']
+            ?? [];
+
+        if (!is_array($results)) {
+            return null;
+        }
+
+        foreach ($results as $result) {
+            if (!is_array($result)) {
+                continue;
+            }
+
+            if ($referenceNumber === null) {
+                return $result;
+            }
+
+            $resultReference = trim((string) ($result['RefNum'] ?? $result['refNum'] ?? ''));
+            if ($resultReference !== '' && hash_equals($referenceNumber, $resultReference)) {
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * @param array<string, mixed> $response
      */
@@ -200,7 +273,7 @@ final class FinalizationService
         $criteria = new Criteria([$orderTransactionId]);
 
         /** @var OrderTransactionEntity|null $transaction */
-        $transaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $transaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
         $customFields = $transaction?->getCustomFields() ?? [];
         $customFields['ebizcharge_verification_response'] = $this->storeResponse($response['body'] ?? []);
 

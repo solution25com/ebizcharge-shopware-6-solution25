@@ -56,7 +56,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
             ->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId))
             ->setLimit(1);
 
-        return $this->format($this->repository->search($criteria, $context)->first());
+        return $this->format(DalSearchResultHelper::first($this->repository->search($criteria, $context)));
     }
 
     public function findByOrderIdentity(string $value, Context $context): ?array
@@ -68,7 +68,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
             ]))
             ->setLimit(1);
 
-        return $this->format($this->repository->search($criteria, $context)->first());
+        return $this->format(DalSearchResultHelper::first($this->repository->search($criteria, $context)));
     }
 
     private function format(mixed $entity): ?array

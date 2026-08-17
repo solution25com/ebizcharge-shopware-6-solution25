@@ -213,6 +213,7 @@ mustContain($root . '/src/Checkout/Payment/Handler/CreditCardPaymentHandler.php'
     'if ($orderData->amountDue <= 0.0)',
     '): Struct',
     '): ?RedirectResponse',
+    "(string) (\$selectedMethod['type'] ?? 'card')",
 ], $violations);
 mustNotContain($root . '/src/Checkout/Payment/Handler/CreditCardPaymentHandler.php', [
     'totalAmount <= 0.0',
@@ -228,12 +229,22 @@ mustContain($root . '/src/Service/Checkout/HostedCheckoutService.php', [
     "'amount_total' => \$orderData->amountDue",
 ], $violations);
 
+mustContain($root . '/src/Service/EbizChargeApiClient.php', [
+    "strtolower(trim(\$paymentMethodType)) === 'ach' ? 'Check' : \$config->processingCommand()",
+    "'details' => \$this->buildCustomerTransactionDetails",
+    "'command' => \$processingCommand ?? \$config->processingCommand()",
+    "'lineItems' => \$this->buildCustomerTransactionLineItems",
+], $violations);
+
 mustContain($root . '/src/Service/Finalize/FinalizationService.php', [
     'normalizeVerifiedPayment',
     'lookupVerifiedResult',
+    'lookupWebFormPaymentInternalId',
+    'markWebFormPaymentAsApplied',
     'verification_pending',
     'GET_TRANSACTION_DETAILS',
     'SEARCH_RECEIVED_PAYMENTS',
+    'MARK_WEBFORM_PAYMENT_APPLIED',
 ], $violations);
 mustNotContain($root . '/src/Service/Finalize/FinalizationService.php', [
     'ProviderOperationResult::declined(',
@@ -307,7 +318,7 @@ mustNotContain($root . '/src/Resources/app/administration/src', [
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `1.0.2`',
+    'Version `1.0.5`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
@@ -319,7 +330,9 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
-    '## [1.0.2]',
+    '## [1.0.5]',
+    'Fixed saved bank-account checkout so payments complete with the selected saved account.',
+    'Fixed hosted checkout and Pay by Link cleanup so completed payments are acknowledged in EBizCharge after Shopware accepts them.',
 ], $violations);
 mustNotContain($root . '/CHANGELOG.md', [
     'Dedicated logger channel `ebizcharge_payment`',
@@ -341,8 +354,17 @@ mustContain($root . '/docs/review/final-audit.md', [
     'service-graph',
 ], $violations);
 
+mustContain($root . '/tools/self-test.php', [
+    'saved-customer-transaction-payload-uses-rest-amount-and-ach-command',
+    "same('Check', \$achPayload['command']",
+    "\$payload['details']['amount']",
+    'finalization-service-verifies-approved-return',
+    'MARK_WEBFORM_PAYMENT_APPLIED',
+    "payment-internal-id",
+], $violations);
+
 mustContain($root . '/composer.json', [
-    '"version": "1.0.2"',
+    '"version": "1.0.5"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

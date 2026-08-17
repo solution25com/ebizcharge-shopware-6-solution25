@@ -24,6 +24,7 @@ else
 fi
 
 PLUGIN_VERSION=$("$RESOLVED_PHP_BIN" -r '$composer = json_decode(file_get_contents("composer.json"), true, 512, JSON_THROW_ON_ERROR); echo $composer["version"];')
+ADMIN_ENTRY=$("$RESOLVED_PHP_BIN" -r '$manifest = json_decode(file_get_contents("src/Resources/public/administration/.vite/manifest.json"), true, 512, JSON_THROW_ON_ERROR); $file = $manifest["main.js"]["file"] ?? null; if (!is_string($file) || $file === "") { fwrite(STDERR, "Could not resolve administration entry from Vite manifest.\n"); exit(1); } echo $file;')
 ARCHIVE_PATH="release/EbizChargeShopware-v${PLUGIN_VERSION}-shopware67.zip"
 
 echo "[1/8] PHP syntax"
@@ -54,7 +55,7 @@ done
 
 echo "[6/8] Administration bundle syntax"
 if [[ -n "$RESOLVED_NODE_BIN" ]]; then
-    "$RESOLVED_NODE_BIN" --check src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js
+    "$RESOLVED_NODE_BIN" --check "src/Resources/public/administration/$ADMIN_ENTRY"
 else
     echo "Node.js not available in this environment; skipped JS syntax check for the prebuilt administration bundle."
 fi

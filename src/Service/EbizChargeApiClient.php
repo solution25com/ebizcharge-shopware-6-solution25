@@ -111,23 +111,14 @@ final class EbizChargeApiClient
         PluginConfig $config,
         string $customerToken,
         string $paymentMethodId,
-        ?string $cardCode
+        ?string $cardCode,
+        string $paymentMethodType = 'card'
     ): array {
-        $transactionPayload = [
-            'ignoreDuplicate' => false,
-            'details' => $this->buildTransactionDetails($orderData, $config, round($orderData->amountDue, 2)),
-            'lineItems' => $this->buildLineItems($orderData),
-            'command' => $config->processingCommand(),
-        ];
-
-        if ($cardCode !== null && $cardCode !== '') {
-            $transactionPayload['cardCode'] = $cardCode;
-        }
-
+        $processingCommand = $this->customerTransactionCommand($config, $paymentMethodType);
         $response = $this->client->send(ProviderOperation::RUN_CUSTOMER_TRANSACTION, [
             'custNum' => $customerToken,
             'paymentMethodID' => $paymentMethodId,
-            'tran' => $transactionPayload,
+            'tran' => $this->buildCustomerTransactionPayload($orderData, $config, $cardCode, $processingCommand),
         ], $config);
 
         $result = $response['body']['runCustomerTransactionResponse']['runCustomerTransactionResult']
@@ -151,28 +142,28 @@ final class EbizChargeApiClient
             $authorizationCode = trim((string) ($result['authCode'] ?? $result['AuthCode'] ?? ''));
 
             $operationResult = ProviderOperationResult::approved(
-                $config->processingCommand(),
+                $processingCommand,
                 $providerReference !== '' ? $providerReference : null,
                 $authorizationCode !== '' ? $authorizationCode : null,
                 $supportMessage,
                 $paymentMethodId,
-                $config->processingCommand()
+                $processingCommand
             );
 
             return [
                 'operationResult' => $operationResult,
-                'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $config, $paymentMethodId),
+                'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $processingCommand, $paymentMethodId),
             ];
         }
 
         return [
             'operationResult' => ProviderOperationResult::declined(
-                $config->processingCommand(),
+                $processingCommand,
                 $supportMessage,
                 true,
                 'saved_card_declined'
             ),
-            'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $config, $paymentMethodId),
+            'verificationResponse' => $this->buildSavedCardVerificationResponse($result, $processingCommand, $paymentMethodId),
         ];
     }
 
@@ -181,7 +172,7 @@ final class EbizChargeApiClient
      *
      * @return array<string, mixed>
      */
-    private function buildSavedCardVerificationResponse(array $result, PluginConfig $config, string $paymentMethodId): array
+    private function buildSavedCardVerificationResponse(array $result, string $processingCommand, string $paymentMethodId): array
     {
         return [
             'referenceNumber' => $result['refNum'] ?? $result['RefNum'] ?? null,
@@ -190,7 +181,7 @@ final class EbizChargeApiClient
             'statusCode' => $result['statusCode'] ?? $result['StatusCode'] ?? null,
             'result' => $result['result'] ?? $result['Result'] ?? null,
             'resultCode' => $result['resultCode'] ?? $result['ResultCode'] ?? null,
-            'type' => $config->processingCommand(),
+            'type' => $result['transactionType'] ?? $result['TransactionType'] ?? $processingCommand,
             'paymentMethodId' => $paymentMethodId,
             'authCode' => $result['authCode'] ?? $result['AuthCode'] ?? null,
             'cardCodeResultCode' => $result['cardCodeResultCode'] ?? $result['CardCodeResultCode'] ?? null,
@@ -283,11 +274,14 @@ final class EbizChargeApiClient
      */
     private function buildTransactionDetails(CheckoutOrderData $orderData, PluginConfig $config, float $amount): array
     {
+        $tax = round($orderData->taxAmount, 2);
+        $shipping = round($orderData->shippingAmount, 2);
+
         return [
             'amount' => $amount,
-            'subtotal' => $amount,
-            'tax' => round($orderData->taxAmount, 2),
-            'shipping' => round($orderData->shippingAmount, 2),
+            'subtotal' => round(max(0.0, $amount - $tax - $shipping), 2),
+            'tax' => $tax,
+            'shipping' => $shipping,
             'duty' => 0,
             'discount' => 0,
             'tip' => 0,
@@ -297,6 +291,72 @@ final class EbizChargeApiClient
             'invoice' => $orderData->orderNumber,
             'description' => $config->descriptionForOrder($orderData->orderNumber),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildCustomerTransactionPayload(CheckoutOrderData $orderData, PluginConfig $config, ?string $cardCode, ?string $processingCommand = null): array
+    {
+        $payload = [
+            'isRecurring' => false,
+            'InventoryLocation' => '',
+            'IgnoreDuplicate' => false,
+            'details' => $this->buildCustomerTransactionDetails($orderData, $config, round($orderData->amountDue, 2)),
+            'command' => $processingCommand ?? $config->processingCommand(),
+            'lineItems' => $this->buildCustomerTransactionLineItems($orderData),
+        ];
+
+        if ($cardCode !== null && $cardCode !== '') {
+            $payload['CardCode'] = $cardCode;
+        }
+
+        return $payload;
+    }
+
+    private function customerTransactionCommand(PluginConfig $config, string $paymentMethodType): string
+    {
+        return strtolower(trim($paymentMethodType)) === 'ach' ? 'Check' : $config->processingCommand();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildCustomerTransactionDetails(CheckoutOrderData $orderData, PluginConfig $config, float $amount): array
+    {
+        $tax = round($orderData->taxAmount, 2);
+        $shipping = round($orderData->shippingAmount, 2);
+
+        return [
+            'amount' => $amount,
+            'subtotal' => round(max(0.0, $amount - $tax - $shipping), 2),
+            'tax' => $tax,
+            'shipping' => $shipping,
+            'duty' => round($orderData->dutyAmount, 2),
+            'discount' => 0,
+            'tip' => round($orderData->tipAmount, 2),
+            'nonTax' => false,
+            'allowPartialAuth' => false,
+            'sessionID' => $orderData->orderTransactionId,
+            'shipFromZip' => $config->shipFromZip(),
+            'orderID' => $orderData->orderId,
+            'invoice' => $orderData->orderNumber,
+            'description' => $config->descriptionForOrder($orderData->orderNumber),
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function buildCustomerTransactionLineItems(CheckoutOrderData $orderData): array
+    {
+        $lineItems = [];
+
+        foreach ($orderData->lineItems as $item) {
+            $lineItems[] = $item->toProviderArray();
+        }
+
+        return $lineItems;
     }
 
     /**

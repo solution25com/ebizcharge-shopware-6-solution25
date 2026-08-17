@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EbizChargeShopware\Service\Checkout;
 
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\LineItemData;
@@ -34,7 +35,7 @@ final class OrderTransactionLoader
             ->addAssociation('stateMachineState');
 
         /** @var OrderTransactionEntity|null $orderTransaction */
-        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $orderTransaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
 
         if ($orderTransaction === null || $orderTransaction->getOrder() === null) {
             throw PaymentException::invalidTransaction($orderTransactionId);
@@ -85,7 +86,7 @@ final class OrderTransactionLoader
                     ($lineItem->getPayload()['productNumber'] ?? null) ?: $lineItem->getIdentifier(),
                     $lineItem->getLabel(),
                     $lineItem->getLabel(),
-                    $this->lineItemDiscountAmount($lineItem),
+                    0.0,
                     $this->lineItemUnitOfMeasure($lineItem),
                     $lineItem->getUnitPrice(),
                     (float) $lineItem->getQuantity(),
@@ -164,26 +165,6 @@ final class OrderTransactionLoader
         }
 
         return round($amount, 2);
-    }
-
-    private function lineItemDiscountAmount(OrderLineItemEntity $lineItem): float
-    {
-        $payload = $lineItem->getPayload() ?? [];
-        foreach (['discountAmount', 'discount', 'lineItemDiscount'] as $key) {
-            $value = $payload[$key] ?? null;
-            if (is_numeric($value)) {
-                return round(abs((float) $value), 2);
-            }
-        }
-
-        $listPrice = $lineItem->getPrice()?->getListPrice();
-        if ($listPrice === null) {
-            return $lineItem->getTotalPrice() < 0.0 ? round(abs($lineItem->getTotalPrice()), 2) : 0.0;
-        }
-
-        $grossDiscount = ($listPrice->getPrice() - $lineItem->getUnitPrice()) * max(1.0, (float) $lineItem->getQuantity());
-
-        return round(max(0.0, $grossDiscount), 2);
     }
 
     private function lineItemTaxAmount(OrderLineItemEntity $lineItem): float

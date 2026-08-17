@@ -2,7 +2,7 @@
 
 # EBizCharge Payment for Shopware 6.7
 
-Version `1.0.2`
+Version `1.0.5`
 
 ## Introduction
 

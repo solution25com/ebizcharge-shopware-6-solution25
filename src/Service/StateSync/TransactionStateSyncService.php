@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EbizChargeShopware\Service\StateSync;
 
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\ValueObject\ProviderOperationResult;
 use Psr\Log\LoggerInterface;
@@ -89,7 +90,7 @@ final class TransactionStateSyncService
     private function currentState(string $orderTransactionId, Context $context): ?string
     {
         $criteria = (new Criteria([$orderTransactionId]))->addAssociation('stateMachineState');
-        $entity = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $entity = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
 
         if (!$entity instanceof OrderTransactionEntity || $entity->getStateMachineState() === null) {
             return null;

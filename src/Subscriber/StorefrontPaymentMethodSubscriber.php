@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EbizChargeShopware\Subscriber;
 
 use EbizChargeShopware\Checkout\Payment\Handler\PayByLinkPaymentHandler;
+use EbizChargeShopware\Checkout\Payment\Handler\AchPaymentHandler;
+use EbizChargeShopware\Checkout\Payment\Handler\CreditCardPaymentHandler;
 use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Struct\ArrayStruct;
@@ -46,6 +48,11 @@ final class StorefrontPaymentMethodSubscriber implements EventSubscriberInterfac
     private function addSavedCardsExtension(CheckoutConfirmPageLoadedEvent $event): void
     {
         $context = $event->getSalesChannelContext();
+        $paymentHandler = $context->getPaymentMethod()->getHandlerIdentifier();
+        if (!\in_array($paymentHandler, [CreditCardPaymentHandler::class, AchPaymentHandler::class], true)) {
+            return;
+        }
+
         $customer = $context->getCustomer();
 
         if ($customer === null || $customer->getGuest()) {
@@ -53,7 +60,12 @@ final class StorefrontPaymentMethodSubscriber implements EventSubscriberInterfac
         }
 
         try {
-            $customerVault = $this->customerVaultService->ensureVault($context);
+            $customerVault = $this->customerVaultService->findUsableVaultForCustomerId($customer->getId(), $context->getSalesChannelId(), $context->getContext());
+
+            if ($customerVault === null) {
+                return;
+            }
+
             $cards = $this->customerVaultService->getCardsForDisplay($customerVault, $context->getContext());
         } catch (\Throwable $exception) {
             $this->logger->warning('Could not load EBizCharge saved payment methods for checkout.', [

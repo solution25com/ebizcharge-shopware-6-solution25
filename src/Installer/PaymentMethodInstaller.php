@@ -69,6 +69,7 @@ final class PaymentMethodInstaller
 
         if ($id !== null) {
             $payload['id'] = $id;
+            unset($payload['active']);
             $this->paymentMethodRepository->update([$payload], $context);
 
             return;
@@ -93,6 +94,7 @@ final class PaymentMethodInstaller
 
         if ($id !== null) {
             $payload['id'] = $id;
+            unset($payload['active']);
             $this->paymentMethodRepository->update([$payload], $context);
 
             return;

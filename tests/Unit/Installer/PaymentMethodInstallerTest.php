@@ -71,5 +71,11 @@ final class PaymentMethodInstallerTest extends TestCase
         $installer->ensurePaymentMethod('plugin-id', $context, true);
         self::assertTrue($repository->updated[0][0]['afterOrderEnabled']);
         self::assertTrue($repository->updated[1][0]['afterOrderEnabled']);
+        self::assertArrayNotHasKey('active', $repository->updated[0][0]);
+        self::assertArrayNotHasKey('active', $repository->updated[1][0]);
+
+        $installer->ensurePayByLinkPaymentMethod('plugin-id', $context);
+        $installer->ensurePayByLinkPaymentMethod('plugin-id', $context);
+        self::assertArrayNotHasKey('active', $repository->updated[2][0]);
     }
 }

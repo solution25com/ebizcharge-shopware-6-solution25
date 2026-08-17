@@ -15,6 +15,7 @@ else
 fi
 
 PLUGIN_VERSION=$("$RESOLVED_PHP_BIN" -r '$composer = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR); echo $composer["version"];' "$ROOT_DIR/composer.json")
+ADMIN_ENTRY=$("$RESOLVED_PHP_BIN" -r '$manifest = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR); $file = $manifest["main.js"]["file"] ?? null; if (!is_string($file) || $file === "") { fwrite(STDERR, "Could not resolve administration entry from Vite manifest.\n"); exit(1); } echo $file;' "$ROOT_DIR/src/Resources/public/administration/.vite/manifest.json")
 ARCHIVE_PATH="$RELEASE_DIR/EbizChargeShopware-v${PLUGIN_VERSION}-shopware67.zip"
 TMP_DIR=$(mktemp -d /tmp/ebizcharge-release-XXXXXX)
 STAGE_DIR="$TMP_DIR/EbizChargeShopware"
@@ -26,7 +27,7 @@ trap cleanup EXIT
 
 mkdir -p "$RELEASE_DIR" "$STAGE_DIR"
 
-for required in "$ROOT_DIR/composer.json" "$ROOT_DIR/README.md" "$ROOT_DIR/CHANGELOG.md" "$ROOT_DIR/src/Resources/config/config.xml" "$ROOT_DIR/src/Resources/config/plugin.png" "$ROOT_DIR/src/Resources/config/services.xml" "$ROOT_DIR/src/Resources/public/administration/assets/ebiz-charge-shopware-CYcDp2Gf.js"; do
+for required in "$ROOT_DIR/composer.json" "$ROOT_DIR/README.md" "$ROOT_DIR/CHANGELOG.md" "$ROOT_DIR/src/Resources/config/config.xml" "$ROOT_DIR/src/Resources/config/plugin.png" "$ROOT_DIR/src/Resources/config/services.xml" "$ROOT_DIR/src/Resources/public/administration/$ADMIN_ENTRY"; do
     if [[ ! -e "$required" ]]; then
         echo "Missing required release file: $required" >&2
         exit 1

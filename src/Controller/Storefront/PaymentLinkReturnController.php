@@ -54,7 +54,7 @@ final class PaymentLinkReturnController
 
             $orderData = $this->orderTransactionLoader->load($orderTransactionId, $context);
             $config    = $this->configProvider->get($orderData->salesChannelId);
-            $outcome   = $this->finalizationService->finalize($request, $orderData, $config, $context, ProviderContract::EMAIL_FORM_TYPE);
+            $outcome   = $this->finalizationService->finalize($request, $orderData, $config, $context, ProviderContract::PAY_LINK_ONLY_FORM_TYPE);
 
             if ($outcome->result->outcome === ProviderOperationResult::OUTCOME_APPROVED) {
                 return new RedirectResponse($this->router->generate('frontend.ebizcharge.payment-link.success'));

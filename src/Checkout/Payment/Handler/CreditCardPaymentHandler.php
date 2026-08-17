@@ -12,6 +12,7 @@ use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
 use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Finalize\FinalizationService;
 use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
+use EbizChargeShopware\Storage\Dal\DalSearchResultHelper;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
 use EbizChargeShopware\Struct\CheckoutValidationStruct;
 use EbizChargeShopware\Provider\ProviderContract;
@@ -171,7 +172,8 @@ class CreditCardPaymentHandler extends AbstractPaymentHandler
             $config,
             (string) $customerVault->getEbizCustomerToken(),
             $savedMethodId,
-            $cardCode
+            $cardCode,
+            (string) ($selectedMethod['type'] ?? 'card')
         );
     }
 
@@ -198,7 +200,7 @@ class CreditCardPaymentHandler extends AbstractPaymentHandler
         $criteria = new Criteria([$orderTransactionId]);
 
         /** @var OrderTransactionEntity|null $transaction */
-        $transaction = $this->orderTransactionRepository->search($criteria, $context)->first();
+        $transaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
         $customFields = $transaction?->getCustomFields() ?? [];
         $customFields['ebizcharge_verification_response'] = $verificationResponse;
 
