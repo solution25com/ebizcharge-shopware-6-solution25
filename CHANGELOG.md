@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.5] - 2026-08-17
+
+### Fixed
+
+- Preserved merchant payment-method activation state during plugin metadata updates.
+- Correlated order-transaction state changes by the transitioned transaction ID before capture, void, or refund calls.
+- Switched Pay by Link generation/finalization to the provider's link-only form contract.
+- Avoided checkout-wide provider vault creation when EBizCharge is not the selected payment method.
+- Fixed saved bank-account checkout so payments complete with the selected saved account.
+- Fixed hosted checkout and Pay by Link cleanup so completed payments are acknowledged in EBizCharge after Shopware accepts them.
+- Reconciled direct transaction detail payloads for subtotal, tax, shipping, discounts, and partial transactions.
+- Fixed the vaulted-customer cleanup migration SQL statement generation.
+- Replaced deprecated DAL search-result access with a compatibility helper.
+
 ## [1.0.4] - 2026-07-30
 ### Fixed
 - Removed invalid clear button from order status dropdowns
