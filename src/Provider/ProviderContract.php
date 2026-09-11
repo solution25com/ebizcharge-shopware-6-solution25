@@ -8,6 +8,7 @@ final class ProviderContract
 {
     public const SUBSCRIPTION_KEY_HEADER = 'EBizSubscription-Key';
     public const WEBFORM_TYPE = 'Webform';
+    public const CHECKOUT_GUEST_FORM_TYPE = 'CheckoutGuest';
     public const WEBFORM_PM_REQUEST_FORM = 'PmRequestForm';
     public const EMAIL_FORM_TYPE = 'EmailForm';
     public const PAY_LINK_ONLY_FORM_TYPE = 'PayLinkOnly';
@@ -15,6 +16,7 @@ final class ProviderContract
     public const PAY_BY_TYPE_ACH = 'ACH';
     public const PAY_BY_TYPE_CREDIT_CARD_AND_ACH = 'CC,ACH';
     public const BROWSER_RESULT_QUERY_PARAM = 'ebizchargeResult';
+    public const EMBEDDED_LOOKUP_FORM_FIELD = 'ebizchargeEmbeddedLookupKey';
 
     private function __construct()
     {

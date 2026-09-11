@@ -1,6 +1,19 @@
 # Changelog
 
-## [1.0.5] - 2026-08-17
+## [1.0.6] - 2026-09-10
+
+### Fixed
+
+- Kept abandoned hosted checkout transactions payable from the customer order history by using Shopware's unconfirmed transaction state.
+- Replaced older EBizCharge hosted webform requests when new Pay by Link or hosted checkout forms are generated.
+- Added an embedded storefront hosted webform checkout option while preserving the redirect flow option.
+- Used the current Shopware order total for EBizCharge payment, capture, void, and refund payloads.
+- Hid checkout and saved-payment-method customer surfaces until EBizCharge credentials are configured and validated.
+- Removed plugin-owned payment data during uninstall when the merchant chooses not to keep data.
+- Deleted outstanding hosted webform requests before uninstall data removal drops the stored request identifiers.
+- Aligned configuration validation errors.
+
+## [1.0.5] - 2026-08-06
 
 ### Fixed
 
@@ -14,21 +27,6 @@
 - Fixed the vaulted-customer cleanup migration SQL statement generation.
 - Replaced deprecated DAL search-result access with a compatibility helper.
 
-## [1.0.4] - 2026-07-30
-### Fixed
-- Removed invalid clear button from order status dropdowns
-
-### Changed
-- Added confirmation message on successful API connection test
-
-## [1.0.3] - 2026-07-27
-### Changed
-- Redesigned saved payment method UI at checkout and in the account section with card and ACH styling, brand logos, last 4 digits display, and method name labels
-- Separated credit card and ACH payment methods into distinct sections
-- Improved default payment method selection handling
-- Removed saved payment dropdown when no saved cards or ACH accounts are available
-- Improved delete confirmation flow with loading feedback for account redirects
-- Removed inline style overrides for cleaner stylesheet inheritance
 
 ## [1.0.2] - 2026-07-10
 

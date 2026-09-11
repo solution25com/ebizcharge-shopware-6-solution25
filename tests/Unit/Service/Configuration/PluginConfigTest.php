@@ -32,4 +32,15 @@ final class PluginConfigTest extends TestCase
 
         self::assertNotSame($base->credentialFingerprint(), $changed->credentialFingerprint());
     }
+
+    public function testPaymentFlowKeepsExplicitEmbeddedModeAndDefaultsUnknownValuesToRedirect(): void
+    {
+        $embedded = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}', paymentFlow: 'embedded');
+        $unknown = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}', paymentFlow: 'unexpected');
+
+        self::assertTrue($embedded->isEmbeddedFlow());
+        self::assertSame('embedded', $embedded->paymentFlow());
+        self::assertFalse($unknown->isEmbeddedFlow());
+        self::assertSame('redirect', $unknown->paymentFlow());
+    }
 }

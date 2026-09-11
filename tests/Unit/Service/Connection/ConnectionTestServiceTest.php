@@ -36,7 +36,7 @@ final class ConnectionTestServiceTest extends TestCase
         $service = new ConnectionTestService(
             $providerClient,
             new ResponseNormalizer(),
-            new ConnectionHealthRegistry(new SystemConfigService()),
+            new ConnectionHealthRegistry(new InMemorySystemConfigService()),
             new NullLogger()
         );
 
@@ -60,7 +60,7 @@ final class ConnectionTestServiceTest extends TestCase
         $service = new ConnectionTestService(
             $providerClient,
             new ResponseNormalizer(),
-            new ConnectionHealthRegistry(new SystemConfigService()),
+            new ConnectionHealthRegistry(new InMemorySystemConfigService()),
             new NullLogger()
         );
 
@@ -69,5 +69,37 @@ final class ConnectionTestServiceTest extends TestCase
 
         self::assertFalse($result->success);
         self::assertSame('provider_response', $result->failureCategory);
+    }
+}
+
+final class InMemorySystemConfigService extends SystemConfigService
+{
+    /**
+     * @var array<string, array<mixed>|bool|float|int|string|null>
+     */
+    private array $values = [];
+
+    public function __construct()
+    {
+    }
+
+    public function get(string $key, ?string $salesChannelId = null): array|bool|float|int|string|null
+    {
+        return $this->values[$this->storageKey($key, $salesChannelId)] ?? null;
+    }
+
+    public function set(string $key, $value, ?string $salesChannelId = null): void
+    {
+        $this->values[$this->storageKey($key, $salesChannelId)] = $value;
+    }
+
+    public function delete(string $key, ?string $salesChannel = null): void
+    {
+        unset($this->values[$this->storageKey($key, $salesChannel)]);
+    }
+
+    private function storageKey(string $key, ?string $salesChannelId): string
+    {
+        return $key . '|' . (string) $salesChannelId;
     }
 }

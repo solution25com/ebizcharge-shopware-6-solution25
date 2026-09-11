@@ -2,11 +2,11 @@
 
 # EBizCharge Payment for Shopware 6.7
 
-Version `1.0.5`
+Version `1.0.6`
 
 ## Introduction
 
-The **EBizCharge Payment Plugin** enables secure payments for Shopware 6.7 stores through the EBizCharge REST hosted webform and customer-vault flows. For new payment entry, customers are redirected to EBizCharge, keeping raw payment data outside the Shopware backend.
+The **EBizCharge Payment Plugin** enables secure payments for Shopware 6.7 stores through the EBizCharge REST hosted webform and customer-vault flows. For new payment entry, merchants can choose either a redirect flow or an embedded storefront webform flow, keeping raw payment data outside the Shopware backend.
 
 REST only integration using the EBizCharge hosted webform and REST verification APIs.
 
@@ -20,6 +20,7 @@ The plugin supports hosted card and ACH checkout, saved-payment-method account m
 
 - Accept hosted card and ACH payments through the EBizCharge secure checkout.
 - Keep sensitive payment entry on the provider-hosted form.
+- Choose between redirect and embedded storefront hosted-payment flows.
 - Use server-side provider verification before Shopware transaction states are applied.
 - Mark approved hosted webform payments as applied in EBizCharge after Shopware state sync.
 
@@ -134,6 +135,7 @@ For each environment, configure:
 Configure:
 
 - Payment command: `Sale` or `AuthOnly`
+- Payment flow: redirect to the hosted payment page, or embedded storefront iframe
 - Ship-from ZIP
 - Transaction description template
 - AVS enforcement
@@ -182,12 +184,12 @@ The plugin integrates into Shopware checkout through the `EBizCharge Hosted Paym
 1. Customer selects **EBizCharge Hosted Payment** in checkout.
 2. Shopware creates the order and order transaction.
 3. The plugin validates configuration and connection health.
-4. The plugin creates an EBizCharge hosted webform URL.
-5. Customer is redirected to the hosted EBizCharge payment form.
-6. EBizCharge redirects the customer back to Shopware.
+4. The plugin syncs the customer mapping and creates an EBizCharge hosted webform URL.
+5. Depending on configuration, the customer completes the hosted EBizCharge form either embedded in the storefront or through a provider redirect.
+6. EBizCharge returns the customer back to Shopware.
 7. Shopware finalization verifies the payment with provider data before updating the transaction state.
 
-<img width="1002" height="1542" alt="image" src="https://github.com/user-attachments/assets/43c4e993-3d34-48c2-8901-88e9a9cde9bf" />
+<img width="780" height="1280" alt="image" src="https://github.com/user-attachments/assets/8e17c14f-cfbe-4062-b876-e0c93e167e25" />
 
 
 ### Saved Payment Methods During Checkout
@@ -238,7 +240,7 @@ Payment-link return routes:
 
 Registered customers can manage their saved EBizCharge payment methods from the account dashboard.
 
-<img width="2304" height="1016" alt="image" src="https://github.com/user-attachments/assets/38f1c122-7a7a-4446-9a3a-cf00a1d794ca" />
+<img width="1630" height="982" alt="image" src="https://github.com/user-attachments/assets/829f4d36-f393-46b4-8bb9-d044d938aea2" />
 
 
 ### Accessing Saved Payment Methods

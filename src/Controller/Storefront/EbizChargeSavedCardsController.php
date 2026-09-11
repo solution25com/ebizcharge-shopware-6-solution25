@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EbizChargeShopware\Controller\Storefront;
 
+use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
+use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -15,7 +17,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class EbizChargeSavedCardsController extends StorefrontController
 {
     public function __construct(
-        private readonly EbizChargeCustomerVaultService $customerVaultService
+        private readonly EbizChargeCustomerVaultService $customerVaultService,
+        private readonly PluginConfigProvider $configProvider,
+        private readonly ConnectionHealthRegistry $connectionHealthRegistry
     ) {
     }
 
@@ -32,8 +36,17 @@ final class EbizChargeSavedCardsController extends StorefrontController
             return $this->redirectToRoute('frontend.account.login.page');
         }
 
+        if (!$this->isConnectionReady($context)) {
+            $this->addFlash('info', $this->trans('ebizcharge.account.configurationUnavailable'));
+
+            return $this->redirectUnavailable();
+        }
+
         $customerVault = $this->customerVaultService->ensureVault($context);
-        $savedPaymentMethods = $this->customerVaultService->getSavedPaymentMethodsForDisplay($customerVault, $context->getContext());
+        $savedPaymentMethods = $this->customerVaultService->getSavedPaymentMethodsForDisplay(
+            $customerVault,
+            $context->getContext()
+        );
         $addCardUrl = null;
         if ((string) $request->query->get('addCard', '') === '1') {
             try {
@@ -46,6 +59,7 @@ final class EbizChargeSavedCardsController extends StorefrontController
         return $this->renderStorefront('@EbizChargeShopware/storefront/page/account/ebizcharge-saved-cards.html.twig', [
             'savedPaymentMethods' => $savedPaymentMethods,
             'addCardUrl' => $addCardUrl,
+            'ebizchargeSavedCardsAvailable' => true,
         ]);
     }
 
@@ -58,6 +72,12 @@ final class EbizChargeSavedCardsController extends StorefrontController
     public function delete(Request $request, SalesChannelContext $context): Response
     {
         $this->requireCustomer($context);
+
+        if (!$this->isConnectionReady($context)) {
+            $this->addFlash('danger', $this->trans('ebizcharge.account.configurationUnavailable'));
+
+            return $this->redirectUnavailable();
+        }
 
         $methodId = (string) $request->request->get('savedMethodId', '');
         if ($methodId === '') {
@@ -86,6 +106,12 @@ final class EbizChargeSavedCardsController extends StorefrontController
     public function setDefault(Request $request, SalesChannelContext $context): Response
     {
         $this->requireCustomer($context);
+
+        if (!$this->isConnectionReady($context)) {
+            $this->addFlash('danger', $this->trans('ebizcharge.account.configurationUnavailable'));
+
+            return $this->redirectUnavailable();
+        }
 
         $methodId = (string) $request->request->get('savedMethodId', '');
         if ($methodId === '') {
@@ -118,6 +144,10 @@ final class EbizChargeSavedCardsController extends StorefrontController
             return $this->redirectToRoute('frontend.account.login.page');
         }
 
+        if (!$this->isConnectionReady($context)) {
+            return $this->redirectUnavailable();
+        }
+
         return $this->redirectToRoute('frontend.account.ebizcharge.saved-cards.index', ['addCard' => '1']);
     }
 
@@ -126,11 +156,24 @@ final class EbizChargeSavedCardsController extends StorefrontController
         return $this->redirectToRoute('frontend.account.ebizcharge.saved-cards.index');
     }
 
+    private function redirectUnavailable(): Response
+    {
+        return $this->redirectToRoute('frontend.account.home.page');
+    }
+
     private function requireCustomer(SalesChannelContext $context): void
     {
         $customer = $context->getCustomer();
         if ($customer === null || $customer->getGuest()) {
             throw $this->createAccessDeniedException();
         }
+    }
+
+    private function isConnectionReady(SalesChannelContext $context): bool
+    {
+        $config = $this->configProvider->get($context->getSalesChannelId());
+
+        return $config->hasCompleteCredentials()
+            && $this->connectionHealthRegistry->hasSuccessfulTest($config, $context->getSalesChannelId());
     }
 }

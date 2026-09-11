@@ -106,4 +106,55 @@ final class RestProviderClientTest extends TestCase
             $transport->captured['payload']['markEbizWebFormPaymentAsApplied']['securityToken']['securityId']
         );
     }
+
+    public function testBuildsDeleteWebFormPaymentRequest(): void
+    {
+        $transport = new class implements ProviderTransportInterface {
+            public array $captured = [];
+
+            public function send(string $url, array $headers, array $payload, int $timeoutSeconds): array
+            {
+                $this->captured = compact('url', 'headers', 'payload', 'timeoutSeconds');
+
+                return ['statusCode' => 200, 'body' => ['ok' => true], 'rawBody' => '{}'];
+            }
+        };
+
+        $client = new RestProviderClient(
+            $transport,
+            new SecurityTokenPayloadFactory(),
+            new NullLogger()
+        );
+
+        $config = new PluginConfig(
+            'sandbox',
+            'https://example.test',
+            'sid',
+            'uid',
+            'pwd',
+            'subkey',
+            '92618',
+            'Sale',
+            7,
+            20,
+            1,
+            'Order {{ orderNumber }}'
+        );
+
+        $client->send(
+            ProviderOperation::DELETE_WEBFORM_PAYMENT,
+            ['paymentInternalId' => 'old-payment-id'],
+            $config
+        );
+
+        self::assertSame('https://example.test/DeleteEbizWebFormPayment', $transport->captured['url']);
+        self::assertSame(
+            'old-payment-id',
+            $transport->captured['payload']['deleteEbizWebFormPayment']['paymentInternalId']
+        );
+        self::assertSame(
+            'sid',
+            $transport->captured['payload']['deleteEbizWebFormPayment']['securityToken']['securityId']
+        );
+    }
 }

@@ -106,6 +106,12 @@ class CreditCardPaymentHandler extends AbstractPaymentHandler
             return null;
         }
 
+        if ($config->isEmbeddedFlow()) {
+            $this->reconcileEmbeddedPayment($request, $orderData, $config, $context, $transaction);
+
+            return null;
+        }
+
         $savePaymentMethod = false;
         $showSavedPaymentMethods = false;
 
@@ -128,6 +134,57 @@ class CreditCardPaymentHandler extends AbstractPaymentHandler
         ]);
 
         return new RedirectResponse($redirect->redirectUrl);
+    }
+
+    private function reconcileEmbeddedPayment(
+        Request $request,
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        Context $context,
+        PaymentTransactionStruct $transaction
+    ): void {
+        $lookupKey = $this->embeddedLookupKey($request);
+        if ($lookupKey === null) {
+            throw PaymentException::asyncProcessInterrupted(
+                $transaction->getOrderTransactionId(),
+                'No completed EBizCharge embedded payment was found for this checkout.'
+            );
+        }
+
+        $outcome = $this->finalizationService->reconcile(
+            $lookupKey,
+            $orderData,
+            $config,
+            $context,
+            $orderData->guest ? ProviderContract::CHECKOUT_GUEST_FORM_TYPE : ProviderContract::WEBFORM_TYPE
+        );
+
+        if ($outcome->throwCustomerCancelled) {
+            throw PaymentException::customerCanceled(
+                $transaction->getOrderTransactionId(),
+                $outcome->result->supportMessage
+            );
+        }
+
+        if ($outcome->throwInterrupted) {
+            throw PaymentException::asyncProcessInterrupted(
+                $transaction->getOrderTransactionId(),
+                $outcome->result->supportMessage
+            );
+        }
+    }
+
+    private function embeddedLookupKey(Request $request): ?string
+    {
+        $posted = $request->request->get(ProviderContract::EMBEDDED_LOOKUP_FORM_FIELD);
+        if (\is_scalar($posted)) {
+            $posted = trim((string) $posted);
+            if ($posted !== '') {
+                return $posted;
+            }
+        }
+
+        return null;
     }
 
     /**

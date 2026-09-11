@@ -1,0 +1,246 @@
+{% block ebizcharge_settings_index %}
+<sw-meteor-page class="ebizcharge-settings-index">
+    <template #smart-bar-icon>
+        <sw-extension-icon
+            class="ebizcharge-settings-index__extension-icon"
+            :src="image"
+            :alt="$tc('ebizcharge.settings.title')"
+        />
+    </template>
+
+    <template #smart-bar-header>
+        {{ $tc('ebizcharge.settings.title') }}
+    </template>
+
+    <template #smart-bar-header-meta>
+        <span>
+            {{ $tc('ebizcharge.settings.labelBy') }} solution25
+        </span>
+    </template>
+
+    <template #smart-bar-actions>
+        <mt-button
+            variant="primary"
+            :disabled="isLoading"
+            @click="onSave"
+        >
+            {{ $tc('global.default.save') }}
+        </mt-button>
+    </template>
+
+    <template #default>
+        <sw-card-view>
+            <mt-banner
+                v-if="validationMessages.length > 0"
+                class="ebizcharge-settings-index__section ebizcharge-settings-index__validation"
+                variant="critical"
+            >
+                <strong>{{ $tc('ebizcharge.configValidation.bannerTitle') }}</strong>
+                <ul>
+                    <li
+                        v-for="message in validationMessages"
+                        :key="message"
+                    >
+                        {{ message }}
+                    </li>
+                </ul>
+            </mt-banner>
+
+            <div class="ebizcharge-settings-index__section ebizcharge-settings-index__sales-channel">
+                <sw-sales-channel-switch
+                    :label="$tc('sw-settings.system-config.labelSalesChannelSelect')"
+                    @change-sales-channel-id="onSalesChannelChanged"
+                />
+            </div>
+
+            <mt-card
+                class="ebizcharge-settings-index__section"
+                :title="$tc('ebizcharge.settings.credentialsCard')"
+                position-identifier="ebizcharge-settings-credentials"
+                :is-loading="isLoading"
+            >
+                <sw-single-select
+                    v-model:value="configValues[configKey('environmentMode')]"
+                    :label="$tc('ebizcharge.settings.environmentMode')"
+                    :options="environmentOptions"
+                    :error="getFieldError('environmentMode')"
+                    label-property="label"
+                    value-property="value"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('sandboxBaseUrl')]"
+                    :label="$tc('ebizcharge.settings.sandboxBaseUrl')"
+                    :help-text="$tc('ebizcharge.settings.sandboxBaseUrlHelpText')"
+                    :error="getFieldError('sandboxBaseUrl')"
+                    required
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('sandboxSecurityId')]"
+                    :label="$tc('ebizcharge.settings.sandboxSecurityId')"
+                    :error="getFieldError('sandboxSecurityId')"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('sandboxUserId')]"
+                    :label="$tc('ebizcharge.settings.sandboxUserId')"
+                    :error="getFieldError('sandboxUserId')"
+                    required
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('sandboxPassword')]"
+                    :label="$tc('ebizcharge.settings.sandboxPassword')"
+                    :error="getFieldError('sandboxPassword')"
+                    required
+                />
+
+                <ebizcharge-subscription-key-field
+                    v-model:value="configValues[configKey('sandboxSubscriptionKey')]"
+                    :label="$tc('ebizcharge.settings.sandboxSubscriptionKey')"
+                    :error="getFieldError('sandboxSubscriptionKey')"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('productionBaseUrl')]"
+                    :label="$tc('ebizcharge.settings.productionBaseUrl')"
+                    :error="getFieldError('productionBaseUrl')"
+                    required
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('productionSecurityId')]"
+                    :label="$tc('ebizcharge.settings.productionSecurityId')"
+                    :error="getFieldError('productionSecurityId')"
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('productionUserId')]"
+                    :label="$tc('ebizcharge.settings.productionUserId')"
+                    :error="getFieldError('productionUserId')"
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('productionPassword')]"
+                    :label="$tc('ebizcharge.settings.productionPassword')"
+                    :error="getFieldError('productionPassword')"
+                />
+
+                <ebizcharge-subscription-key-field
+                    v-model:value="configValues[configKey('productionSubscriptionKey')]"
+                    :label="$tc('ebizcharge.settings.productionSubscriptionKey')"
+                    :error="getFieldError('productionSubscriptionKey')"
+                />
+
+                <ebizcharge-api-test />
+            </mt-card>
+
+            <mt-card
+                class="ebizcharge-settings-index__section"
+                :title="$tc('ebizcharge.settings.checkoutCard')"
+                position-identifier="ebizcharge-settings-checkout"
+                :is-loading="isLoading"
+            >
+                <sw-single-select
+                    v-model:value="configValues[configKey('processingCommand')]"
+                    :label="$tc('ebizcharge.settings.processingCommand')"
+                    :help-text="$tc('ebizcharge.settings.processingCommandHelpText')"
+                    :options="processingCommandOptions"
+                    :error="getFieldError('processingCommand')"
+                    label-property="label"
+                    value-property="value"
+                    required
+                />
+
+                <sw-single-select
+                    v-model:value="configValues[configKey('paymentFlow')]"
+                    :label="$tc('ebizcharge.settings.paymentFlow')"
+                    :help-text="$tc('ebizcharge.settings.paymentFlowHelpText')"
+                    :options="paymentFlowOptions"
+                    label-property="label"
+                    value-property="value"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('shipFromZip')]"
+                    :label="$tc('ebizcharge.settings.shipFromZip')"
+                    :help-text="$tc('ebizcharge.settings.shipFromZipHelpText')"
+                    :error="getFieldError('shipFromZip')"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="configValues[configKey('descriptionTemplate')]"
+                    :label="$tc('ebizcharge.settings.descriptionTemplate')"
+                    :help-text="$tc('ebizcharge.settings.descriptionTemplateHelpText') + ' {{ orderNumber }}'"
+                />
+
+                <mt-switch
+                    v-model="configValues[configKey('enforceAvsCheck')]"
+                    :label="$tc('ebizcharge.settings.enforceAvsCheck')"
+                    :help-text="$tc('ebizcharge.settings.enforceAvsCheckHelpText')"
+                />
+
+                <mt-number-field
+                    v-model="configValues[configKey('verificationLookbackDays')]"
+                    :label="$tc('ebizcharge.settings.verificationLookbackDays')"
+                    :error="getFieldError('verificationLookbackDays')"
+                    :min="1"
+                    :step="1"
+                    number-type="int"
+                    required
+                />
+
+                <mt-number-field
+                    v-model="configValues[configKey('connectionTimeoutSeconds')]"
+                    :label="$tc('ebizcharge.settings.connectionTimeoutSeconds')"
+                    :error="getFieldError('connectionTimeoutSeconds')"
+                    :min="1"
+                    :step="1"
+                    number-type="int"
+                    required
+                />
+
+                <mt-number-field
+                    v-model="configValues[configKey('retryCount')]"
+                    :label="$tc('ebizcharge.settings.retryCount')"
+                    :help-text="$tc('ebizcharge.settings.retryCountHelpText')"
+                    :error="getFieldError('retryCount')"
+                    :min="0"
+                    :max="3"
+                    :step="1"
+                    number-type="int"
+                    required
+                />
+            </mt-card>
+
+            <mt-card
+                class="ebizcharge-settings-index__section"
+                :title="$tc('ebizcharge.settings.webhookCard')"
+                position-identifier="ebizcharge-settings-webhook"
+                :is-loading="isLoading"
+            >
+                <mt-text-field
+                    v-model="configValues[configKey('webhookBasicUsername')]"
+                    :label="$tc('ebizcharge.settings.webhookBasicUsername')"
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('webhookBasicPassword')]"
+                    :label="$tc('ebizcharge.settings.webhookBasicPassword')"
+                />
+
+                <mt-password-field
+                    v-model="configValues[configKey('webhookSignatureKey')]"
+                    :label="$tc('ebizcharge.settings.webhookSignatureKey')"
+                />
+            </mt-card>
+        </sw-card-view>
+    </template>
+</sw-meteor-page>
+{% endblock %}

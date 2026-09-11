@@ -35,14 +35,15 @@ final class OrderTransactionLoader
             ->addAssociation('stateMachineState');
 
         /** @var OrderTransactionEntity|null $orderTransaction */
-        $orderTransaction = DalSearchResultHelper::first($this->orderTransactionRepository->search($criteria, $context));
+        $orderTransaction = DalSearchResultHelper::first(
+            $this->orderTransactionRepository->search($criteria, $context)
+        );
 
         if ($orderTransaction === null || $orderTransaction->getOrder() === null) {
             throw PaymentException::invalidTransaction($orderTransactionId);
         }
 
         $order = $orderTransaction->getOrder();
-        $transactionAmount = $orderTransaction->getAmount()->getTotalPrice();
         $orderCustomer = $order->getOrderCustomer();
         $billingAddress = $order->getBillingAddress();
 
@@ -120,7 +121,7 @@ final class OrderTransactionLoader
             $customerFullName,
             $this->normalizeOrderDate($order->getCreatedAt()),
             $order->getCurrency()?->getIsoCode() ?? 'USD',
-            $transactionAmount,
+            $order->getAmountTotal(),
             $order->getAmountTotal(),
             $this->orderTaxAmount($order),
             $order->getShippingCosts()->getTotalPrice(),
@@ -129,7 +130,11 @@ final class OrderTransactionLoader
             new AddressData(
                 $billingAddress->getFirstName(),
                 $billingAddress->getLastName(),
-                $this->companyName($billingAddress->getCompany(), $billingAddress->getFirstName(), $billingAddress->getLastName()),
+                $this->companyName(
+                    $billingAddress->getCompany(),
+                    $billingAddress->getFirstName(),
+                    $billingAddress->getLastName()
+                ),
                 $billingAddress->getStreet(),
                 null,
                 $billingAddress->getCity(),

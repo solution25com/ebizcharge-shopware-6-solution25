@@ -45,21 +45,31 @@ final class TransactionStateSyncService
 
         try {
             match ($targetState) {
-                OrderTransactionStates::STATE_AUTHORIZED => $this->stateHandler->authorize($orderTransactionId, $context),
+                OrderTransactionStates::STATE_AUTHORIZED => $this->stateHandler->authorize(
+                    $orderTransactionId,
+                    $context
+                ),
                 OrderTransactionStates::STATE_PAID => $this->stateHandler->paid($orderTransactionId, $context),
                 OrderTransactionStates::STATE_FAILED => $this->stateHandler->fail($orderTransactionId, $context),
                 OrderTransactionStates::STATE_CANCELLED => $this->stateHandler->cancel($orderTransactionId, $context),
+                OrderTransactionStates::STATE_UNCONFIRMED => $this->stateHandler->processUnconfirmed(
+                    $orderTransactionId,
+                    $context
+                ),
                 default => $this->stateHandler->process($orderTransactionId, $context),
             };
         } catch (IllegalTransitionException $exception) {
             $persistedState = $this->currentState($orderTransactionId, $context) ?? $currentState ?? $targetState;
 
-            $this->logger->warning('EBizCharge state transition raised an exception, continuing with audit-safe record update.', [
-                'orderTransactionId' => $orderTransactionId,
-                'targetState' => $targetState,
-                'persistedState' => $persistedState,
-                'message' => $exception->getMessage(),
-            ]);
+            $this->logger->warning(
+                'EBizCharge state transition raised an exception, continuing with audit-safe record update.',
+                [
+                    'orderTransactionId' => $orderTransactionId,
+                    'targetState' => $targetState,
+                    'persistedState' => $persistedState,
+                    'message' => $exception->getMessage(),
+                ]
+            );
 
             $this->transactionRecordStore->upsert($orderTransactionId, [
                 'provider_ref_num' => $result->providerReference,

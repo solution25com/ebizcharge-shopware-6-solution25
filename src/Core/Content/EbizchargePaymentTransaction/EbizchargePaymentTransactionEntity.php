@@ -12,6 +12,8 @@ class EbizchargePaymentTransactionEntity extends Entity
 
     protected ?string $orderId = null;
 
+    protected ?string $salesChannelId = null;
+
     protected ?string $orderNumber = null;
 
     protected ?string $lookupKey = null;
@@ -27,6 +29,8 @@ class EbizchargePaymentTransactionEntity extends Entity
     protected ?string $providerPaymentType = null;
 
     protected ?string $providerPaymentMethod = null;
+
+    protected ?string $activePaymentInternalId = null;
 
     protected ?float $amountTotal = null;
 
@@ -54,6 +58,16 @@ class EbizchargePaymentTransactionEntity extends Entity
     public function setOrderId(?string $orderId): void
     {
         $this->orderId = $orderId;
+    }
+
+    public function getSalesChannelId(): ?string
+    {
+        return $this->salesChannelId;
+    }
+
+    public function setSalesChannelId(?string $salesChannelId): void
+    {
+        $this->salesChannelId = $salesChannelId;
     }
 
     public function getOrderNumber(): ?string
@@ -134,6 +148,16 @@ class EbizchargePaymentTransactionEntity extends Entity
     public function setProviderPaymentMethod(?string $providerPaymentMethod): void
     {
         $this->providerPaymentMethod = $providerPaymentMethod;
+    }
+
+    public function getActivePaymentInternalId(): ?string
+    {
+        return $this->activePaymentInternalId;
+    }
+
+    public function setActivePaymentInternalId(?string $activePaymentInternalId): void
+    {
+        $this->activePaymentInternalId = $activePaymentInternalId;
     }
 
     public function getAmountTotal(): ?float

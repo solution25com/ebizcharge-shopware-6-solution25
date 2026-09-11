@@ -44,7 +44,7 @@ final class EbizChargeApiClient
         }
 
         $orderData = $this->orderTransactionLoader->load($orderTransactionId, $context);
-        $amount = round((float) ($record['amount_total'] ?? 0.0), 2);
+        $amount = round($orderData->amountDue, 2);
         $config = $this->configProvider->get($orderData->salesChannelId);
 
         $this->runTransaction($orderTransactionId, [
@@ -75,7 +75,7 @@ final class EbizChargeApiClient
                 'command' => self::COMMAND_VOID,
                 'refNum' => $record['provider_ref_num'],
                 'ignoreDuplicate' => false,
-                'details' => $this->buildTransactionDetails($orderData, $config, round((float) ($record['amount_total'] ?? 0.0), 2)),
+                'details' => $this->buildTransactionDetails($orderData, $config, round($orderData->amountDue, 2)),
             ],
         ], self::COMMAND_VOID, $record['provider_ref_num'], $orderData, $context);
     }
@@ -89,7 +89,7 @@ final class EbizChargeApiClient
         }
 
         $orderData = $this->orderTransactionLoader->load($orderTransactionId, $context);
-        $amount = round((float) ($record['amount_total'] ?? 0.0), 2);
+        $amount = round($orderData->amountDue, 2);
         $config = $this->configProvider->get($orderData->salesChannelId);
 
         $this->runTransaction($orderTransactionId, [

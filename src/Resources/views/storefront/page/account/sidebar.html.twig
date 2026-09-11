@@ -4,10 +4,12 @@
     {{ parent() }}
 
     {% block page_account_sidebar_link_ebizcharge_saved_cards %}
-        <a href="{{ path('frontend.account.ebizcharge.saved-cards.index') }}"
-           title="{{ 'ebizcharge.account.menuTitle'|trans|striptags }}"
-           class="list-group-item list-group-item-action account-aside-item{% if app.request.attributes.get('_route') is same as('frontend.account.ebizcharge.saved-cards.index') %} is-active{% endif %}">
-            {{ 'ebizcharge.account.menuTitle'|trans }}
-        </a>
+        {% if ebizchargeSavedCardsAvailable|default(false) %}
+            <a href="{{ path('frontend.account.ebizcharge.saved-cards.index') }}"
+               title="{{ 'ebizcharge.account.menuTitle'|trans|striptags }}"
+               class="list-group-item list-group-item-action account-aside-item{% if app.request.attributes.get('_route') is same as('frontend.account.ebizcharge.saved-cards.index') %} is-active{% endif %}">
+                {{ 'ebizcharge.account.menuTitle'|trans }}
+            </a>
+        {% endif %}
     {% endblock %}
 {% endblock %}

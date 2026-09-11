@@ -1,0 +1,16 @@
+.ebiz-embedded-checkout {
+    max-width: 100%;
+}
+
+.ebiz-embedded-checkout__frame-wrap {
+    min-height: 640px;
+}
+
+.ebiz-embedded-checkout__frame {
+    display: block;
+    width: 100%;
+    min-height: 640px;
+    border: 1px solid #d1d9e0;
+    border-radius: 4px;
+    background: #fff;
+}

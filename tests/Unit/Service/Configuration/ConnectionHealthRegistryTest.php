@@ -13,7 +13,7 @@ final class ConnectionHealthRegistryTest extends TestCase
 {
     public function testRequiresSuccessfulMatchingConnectionTest(): void
     {
-        $systemConfigService = new SystemConfigService();
+        $systemConfigService = new InMemorySystemConfigService();
         $registry = new ConnectionHealthRegistry($systemConfigService);
         $config = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}');
 
@@ -37,7 +37,7 @@ final class ConnectionHealthRegistryTest extends TestCase
     {
         $this->expectException(ConfigurationException::class);
 
-        $registry = new ConnectionHealthRegistry(new SystemConfigService());
+        $registry = new ConnectionHealthRegistry(new InMemorySystemConfigService());
         $config = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}');
 
         $registry->requireSuccessfulTest($config);
@@ -45,7 +45,7 @@ final class ConnectionHealthRegistryTest extends TestCase
 
     public function testPasswordOnlyCredentialChangesInvalidatePriorSuccess(): void
     {
-        $systemConfigService = new SystemConfigService();
+        $systemConfigService = new InMemorySystemConfigService();
         $registry = new ConnectionHealthRegistry($systemConfigService);
         $config = new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'pwd', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}');
 
@@ -64,5 +64,37 @@ final class ConnectionHealthRegistryTest extends TestCase
         self::assertFalse($registry->hasSuccessfulTest(
             new PluginConfig('sandbox', 'https://example.test', 'sid', 'uid', 'changed', 'subkey', '92618', 'Sale', 7, 20, 1, 'Order {{ orderNumber }}')
         ));
+    }
+}
+
+final class InMemorySystemConfigService extends SystemConfigService
+{
+    /**
+     * @var array<string, array<mixed>|bool|float|int|string|null>
+     */
+    private array $values = [];
+
+    public function __construct()
+    {
+    }
+
+    public function get(string $key, ?string $salesChannelId = null): array|bool|float|int|string|null
+    {
+        return $this->values[$this->storageKey($key, $salesChannelId)] ?? null;
+    }
+
+    public function set(string $key, $value, ?string $salesChannelId = null): void
+    {
+        $this->values[$this->storageKey($key, $salesChannelId)] = $value;
+    }
+
+    public function delete(string $key, ?string $salesChannel = null): void
+    {
+        unset($this->values[$this->storageKey($key, $salesChannel)]);
+    }
+
+    private function storageKey(string $key, ?string $salesChannelId): string
+    {
+        return $key . '|' . (string) $salesChannelId;
     }
 }

@@ -22,6 +22,8 @@
 
         <service id="EbizChargeShopware\Controller\Storefront\EbizChargeSavedCardsController" public="true">
             <argument type="service" id="EbizChargeShopware\Service\EbizChargeCustomerVaultService"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -36,6 +38,18 @@
             <argument type="service" id="logger"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="router"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="EbizChargeShopware\Controller\Storefront\EmbeddedCheckoutController" public="true">
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\CartCheckoutDataBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\EmbeddedCheckoutService"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
             <tag name="controller.service_arguments"/>
         </service>
     </services>

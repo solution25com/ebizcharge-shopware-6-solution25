@@ -7,6 +7,7 @@ use EbizChargeShopware\Exception\VerificationException;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\LineItemData;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ResponseNormalizerTest extends TestCase
@@ -138,9 +139,7 @@ final class ResponseNormalizerTest extends TestCase
         ], 'Sale', $orderData);
     }
 
-    /**
-     * @dataProvider unauthorizedStatusProvider
-     */
+    #[DataProvider('unauthorizedStatusProvider')]
     public function testUnauthorizedLikeStatusesNeverResolveAsApproved(string $status): void
     {
         $normalizer = new ResponseNormalizer();
@@ -186,9 +185,7 @@ final class ResponseNormalizerTest extends TestCase
         self::assertSame('declined', $result->outcome);
     }
 
-    /**
-     * @dataProvider approvedAuthStatusProvider
-     */
+    #[DataProvider('approvedAuthStatusProvider')]
     public function testApprovedAuthStatusesStayApproved(string $status): void
     {
         $normalizer = new ResponseNormalizer();

@@ -4,6 +4,7 @@
     {{ parent() }}
 
     {% set ebizSavedCards = page.extensions.ebizchargeSavedCards.cards ?? [] %}
+    {% set ebizFlow = page.extensions.ebizchargeCheckout ? page.extensions.ebizchargeCheckout.get('flow') : 'redirect' %}
     {% set isEbizChargeCreditCard = payment.handlerIdentifier == 'EbizChargeShopware\\Checkout\\Payment\\Handler\\CreditCardPaymentHandler' %}
     {% set isEbizChargeAch = payment.handlerIdentifier == 'EbizChargeShopware\\Checkout\\Payment\\Handler\\AchPaymentHandler' %}
     {% set isEbizChargeHostedPayment = isEbizChargeCreditCard or isEbizChargeAch %}
@@ -235,6 +236,44 @@
                        data-ebiz-card-code-input>
             </div>
         </div>
+        {% endif %}
+
+        {% if isEbizChargeHostedPayment and ebizFlow == 'embedded' %}
+            <div class="ebiz-embedded-checkout mt-3"
+                 data-ebiz-charge-embedded-checkout-plugin
+                 data-ebiz-charge-embedded-checkout-plugin-options="{{ {
+                     formUrlEndpoint: path('frontend.ebizcharge.checkout.form-url', {
+                         paymentType: isEbizChargeAch ? 'ach' : 'card'
+                     }),
+                     returnPath: path('frontend.ebizcharge.checkout.embedded-return')
+                 }|json_encode|e('html_attr') }}">
+                <input type="hidden"
+                       name="ebizchargeEmbeddedLookupKey"
+                       value=""
+                       form="confirmOrderForm"
+                       data-ebiz-embedded-lookup-key>
+
+                <div class="ebiz-embedded-checkout__status alert alert-info mt-2"
+                     role="status"
+                     aria-live="polite"
+                     data-ebiz-embedded-status
+                     data-text-loading="{{ 'ebizcharge.embedded.loading'|trans|e('html_attr') }}"
+                     data-text-approved="{{ 'ebizcharge.embedded.approved'|trans|e('html_attr') }}"
+                     data-text-declined="{{ 'ebizcharge.embedded.declined'|trans|e('html_attr') }}"
+                     data-text-error="{{ 'ebizcharge.embedded.error'|trans|e('html_attr') }}"
+                     data-text-completeManually="{{ 'ebizcharge.embedded.completeManually'|trans|e('html_attr') }}">
+                    {{ 'ebizcharge.embedded.loading'|trans|sw_sanitize }}
+                </div>
+
+                <div class="ebiz-embedded-checkout__frame-wrap mt-2" hidden data-ebiz-embedded-frame-wrap>
+                    <iframe class="ebiz-embedded-checkout__frame"
+                            title="{{ 'ebizcharge.embedded.frameTitle'|trans|e('html_attr') }}"
+                            loading="eager"
+                            referrerpolicy="origin"
+                            allow="payment"
+                            data-ebiz-embedded-frame></iframe>
+                </div>
+            </div>
         {% endif %}
     {% endif %}
 {% endblock %}

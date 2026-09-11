@@ -39,6 +39,7 @@ final class EbizchargePaymentTransactionDefinition extends EntityDefinition
         return new FieldCollection([
             (new StringField('order_transaction_id', 'orderTransactionId'))->addFlags(new PrimaryKey(), new Required()),
             new StringField('order_id', 'orderId'),
+            new StringField('sales_channel_id', 'salesChannelId'),
             new StringField('order_number', 'orderNumber'),
             new StringField('lookup_key', 'lookupKey'),
             new StringField('mode', 'mode'),
@@ -47,6 +48,7 @@ final class EbizchargePaymentTransactionDefinition extends EntityDefinition
             new StringField('provider_auth_code', 'providerAuthCode'),
             new StringField('provider_payment_type', 'providerPaymentType'),
             new StringField('provider_payment_method', 'providerPaymentMethod'),
+            new StringField('active_payment_internal_id', 'activePaymentInternalId'),
             new FloatField('amount_total', 'amountTotal'),
             new StringField('currency_iso', 'currencyIso'),
             new LongTextField('last_support_message', 'lastSupportMessage'),

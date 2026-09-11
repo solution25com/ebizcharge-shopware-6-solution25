@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" data-ebiz-embedded-return data-ebiz-outcome="{{ outcome|e('html_attr') }}" data-ebiz-reference="{{ reference|e('html_attr') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ 'ebizcharge.embedded.returnTitle'|trans|sw_sanitize }}</title>
+</head>
+<body>
+    <div class="ebiz-embedded-return__message" role="status" aria-live="polite">
+        {% if outcome == 'approved' %}
+            {{ 'ebizcharge.embedded.returnApproved'|trans|sw_sanitize }}
+        {% elseif outcome == 'declined' %}
+            {{ 'ebizcharge.embedded.returnDeclined'|trans|sw_sanitize }}
+        {% else %}
+            {{ 'ebizcharge.embedded.returnProcessing'|trans|sw_sanitize }}
+        {% endif %}
+    </div>
+</body>
+</html>

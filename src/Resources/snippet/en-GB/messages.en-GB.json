@@ -10,9 +10,22 @@
       "hostedFormOption": "Pay with a new payment method",
       "savedAchGroup": "Pay with saved bank account",
       "savedCardGroup": "Pay with saved card",
+      "configurationUnavailable": "EBizCharge payment methods are not available because the payment connection has not been configured and validated yet.",
       "cardCodeLabel": "Security code",
       "cardCodeTitle": "Enter 3 or 4 digits.",
       "expiresShort": "exp. %date%"
+    },
+    "embedded": {
+      "loading": "Loading secure payment form...",
+      "approved": "Payment received. Completing your order...",
+      "declined": "The payment was declined. Please try another card.",
+      "error": "The payment form could not be loaded. Please try again.",
+      "completeManually": "Payment received. Please accept the terms and place the order to finish.",
+      "frameTitle": "EBizCharge secure payment form",
+      "returnTitle": "Completing payment",
+      "returnApproved": "Payment received. Completing your order...",
+      "returnDeclined": "The payment was declined. You can try again.",
+      "returnProcessing": "Processing payment result..."
     },
     "admin": {
       "connectionSuccess": "Connection test passed.",
@@ -22,6 +35,7 @@
       "menuTitle": "EBizCharge Saved Payment Methods",
       "title": "EBizCharge Saved Payment Methods",
       "intro": "Manage your saved payment methods securely with EBizCharge.",
+      "configurationUnavailable": "The merchant has not finished validating the EBizCharge connection. Please check back later.",
       "addCard": "Add payment method",
       "refreshCards": "Refresh payment methods",
       "empty": "You have no saved payment methods yet.",

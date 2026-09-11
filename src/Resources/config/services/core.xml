@@ -24,6 +24,11 @@
         <service id="EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder"/>
         <service id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
 
+        <service id="EbizChargeShopware\Service\ProviderCustomerSyncService">
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+        </service>
+
         <service id="EbizChargeShopware\Core\Content\EbizchargeVaultedCustomer\EbizchargeVaultedCustomerDefinition">
             <tag name="shopware.entity.definition"/>
         </service>
@@ -63,11 +68,30 @@
             <argument type="service" id="order_transaction.repository"/>
         </service>
 
+        <service id="EbizChargeShopware\Service\Checkout\CartCheckoutDataBuilder">
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
+        </service>
+
         <service id="EbizChargeShopware\Service\Checkout\HostedCheckoutService">
             <argument type="service" id="EbizChargeShopware\Provider\Request\GetEbizWebFormUrlRequestBuilder"/>
             <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
             <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
             <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\HostedWebformRequestCleanupService"/>
+            <argument type="service" id="EbizChargeShopware\Service\ProviderCustomerSyncService"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Checkout\HostedWebformRequestCleanupService" public="true">
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
+        <service id="EbizChargeShopware\Service\Checkout\EmbeddedCheckoutService">
+            <argument type="service" id="EbizChargeShopware\Provider\Request\GetEbizWebFormUrlRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\ReturnUrlBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Service\ProviderCustomerSyncService"/>
         </service>
 
         <service id="EbizChargeShopware\Service\Finalize\BrowserReturnParser"/>
@@ -152,6 +176,8 @@
 
         <service id="EbizChargeShopware\Subscriber\StorefrontPaymentMethodSubscriber">
             <argument type="service" id="EbizChargeShopware\Service\EbizChargeCustomerVaultService"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Service\Connection\ConnectionHealthRegistry"/>
             <argument type="service" id="EbizChargeShopware.logger"/>
             <tag name="kernel.event_subscriber"/>
         </service>

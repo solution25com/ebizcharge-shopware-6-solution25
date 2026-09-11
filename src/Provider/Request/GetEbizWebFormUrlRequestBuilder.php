@@ -17,8 +17,21 @@ final class GetEbizWebFormUrlRequestBuilder
     /**
      * @return array<string, mixed>
      */
-    public function build(CheckoutOrderData $orderData, PluginConfig $config, string $shopwareReturnUrl, ?bool $savePaymentMethod = null, ?bool $showSavedPaymentMethods = null, string $formType = ProviderContract::WEBFORM_TYPE, string $payByType = ProviderContract::PAY_BY_TYPE_CREDIT_CARD_AND_ACH): array
-    {
+    public function build(
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        string $shopwareReturnUrl,
+        ?bool $savePaymentMethod = null,
+        ?bool $showSavedPaymentMethods = null,
+        string $formType = ProviderContract::WEBFORM_TYPE,
+        string $payByType = ProviderContract::PAY_BY_TYPE_CREDIT_CARD_AND_ACH,
+        ?string $approvedUrl = null,
+        ?string $declinedUrl = null,
+        ?string $errorUrl = null
+    ): array {
+        $resolvedFormType = $orderData->guest && $formType === ProviderContract::WEBFORM_TYPE
+            ? ProviderContract::CHECKOUT_GUEST_FORM_TYPE
+            : $formType;
         $customerId = $orderData->guest
             ? 'guest-' . $orderData->orderId
             : ($orderData->customerId ?: $orderData->customerNumber ?: $orderData->orderId);
@@ -28,7 +41,7 @@ final class GetEbizWebFormUrlRequestBuilder
 
         return [
             'ePaymentForm' => [
-                'formType' => $formType,
+                'formType' => $resolvedFormType,
                 'processingCommand' => $config->processingCommand(),
                 'customerId' => $customerId,
                 'custFullName' => $orderData->customerFullName,
@@ -53,9 +66,9 @@ final class GetEbizWebFormUrlRequestBuilder
                 'showSavedPaymentMethods' => $showSavedPaymentMethods ?? false,
                 'savePaymentMethod' => $savePaymentMethod ?? false,
                 'displayDefaultResultPage' => 0,
-                'approvedURL' => $shopwareReturnUrl,
-                'declinedURL' => $shopwareReturnUrl,
-                'errorURL' => $shopwareReturnUrl,
+                'approvedURL' => $approvedUrl ?? $shopwareReturnUrl,
+                'declinedURL' => $declinedUrl ?? $shopwareReturnUrl,
+                'errorURL' => $errorUrl ?? $shopwareReturnUrl,
                 'transactionLookupKey' => $orderData->orderTransactionId,
                 'billingAddress' => $orderData->billingAddress->toProviderArray(),
                 'shippingAddress' => $orderData->shippingAddress?->toProviderArray(),

@@ -41,7 +41,6 @@ echo "[4/8] Self-tests"
 
 echo "[5/8] XML parse"
 for file in \
-    src/Resources/config/config.xml \
     src/Resources/config/services.xml \
     src/Resources/config/services/core.xml \
     src/Resources/config/services/controllers.xml \

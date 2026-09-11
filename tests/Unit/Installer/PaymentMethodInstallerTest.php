@@ -6,6 +6,10 @@ use EbizChargeShopware\Installer\PaymentMethodInstaller;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
+use Shopware\Core\Framework\Event\NestedEventCollection;
 
 final class PaymentMethodInstallerTest extends TestCase
 {
@@ -16,7 +20,11 @@ final class PaymentMethodInstallerTest extends TestCase
             public array $created = [];
             public array $updated = [];
 
-            public function create(array $data, object $context): void
+            public function __construct()
+            {
+            }
+
+            public function create(array $data, Context $context): EntityWrittenContainerEvent
             {
                 $this->created[] = $data;
                 foreach ($data as $row) {
@@ -25,30 +33,31 @@ final class PaymentMethodInstallerTest extends TestCase
                         $this->existingIds[$technicalName] = $technicalName . '-id';
                     }
                 }
+
+                return new EntityWrittenContainerEvent($context, new NestedEventCollection(), []);
             }
 
-            public function update(array $data, object $context): void
+            public function update(array $data, Context $context): EntityWrittenContainerEvent
             {
                 $this->updated[] = $data;
+
+                return new EntityWrittenContainerEvent($context, new NestedEventCollection(), []);
             }
 
-            public function searchIds(object $criteria, object $context): object
+            public function searchIds(Criteria $criteria, Context $context): IdSearchResult
             {
                 $technicalName = $this->technicalNameFromCriteria($criteria);
+                $id = $this->existingIds[$technicalName] ?? null;
 
-                return new class($this->existingIds[$technicalName] ?? null) {
-                    public function __construct(private ?string $existingId)
-                    {
-                    }
-
-                    public function firstId(): ?string
-                    {
-                        return $this->existingId;
-                    }
-                };
+                return new IdSearchResult(
+                    $id === null ? 0 : 1,
+                    $id === null ? [] : [$id => ['primaryKey' => $id, 'data' => []]],
+                    $criteria,
+                    $context
+                );
             }
 
-            private function technicalNameFromCriteria(object $criteria): string
+            private function technicalNameFromCriteria(Criteria $criteria): string
             {
                 foreach ($criteria->getFilters() as $filter) {
                     if (method_exists($filter, 'getField') && method_exists($filter, 'getValue') && $filter->getField() === 'technicalName') {
@@ -61,7 +70,7 @@ final class PaymentMethodInstallerTest extends TestCase
         };
 
         $installer = new PaymentMethodInstaller($repository);
-        $context = new Context();
+        $context = Context::createDefaultContext();
 
         $installer->ensurePaymentMethod('plugin-id', $context, false);
         self::assertTrue($repository->created[0][0]['afterOrderEnabled']);

@@ -1,0 +1,12 @@
+{% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+
+{% block page_checkout_confirm_alerts %}
+    {{ parent() }}
+
+    {% if page.extensions.ebizchargeCheckoutConfigurationUnavailable is defined %}
+        {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+            type: 'info',
+            content: 'ebizcharge.checkout.configurationUnavailable'|trans|sw_sanitize
+        } %}
+    {% endif %}
+{% endblock %}

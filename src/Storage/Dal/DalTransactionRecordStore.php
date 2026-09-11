@@ -16,6 +16,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
 {
     private const FIELD_MAP = [
         'order_id' => 'orderId',
+        'sales_channel_id' => 'salesChannelId',
         'order_number' => 'orderNumber',
         'lookup_key' => 'lookupKey',
         'mode' => 'mode',
@@ -24,6 +25,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
         'provider_auth_code' => 'providerAuthCode',
         'provider_payment_type' => 'providerPaymentType',
         'provider_payment_method' => 'providerPaymentMethod',
+        'active_payment_internal_id' => 'activePaymentInternalId',
         'amount_total' => 'amountTotal',
         'currency_iso' => 'currencyIso',
         'last_support_message' => 'lastSupportMessage',
@@ -80,6 +82,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
         return [
             'order_transaction_id' => $entity->getOrderTransactionId(),
             'order_id' => $entity->getOrderId(),
+            'sales_channel_id' => $entity->getSalesChannelId(),
             'order_number' => $entity->getOrderNumber(),
             'lookup_key' => $entity->getLookupKey(),
             'mode' => $entity->getMode(),
@@ -88,6 +91,7 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
             'provider_auth_code' => $entity->getProviderAuthCode(),
             'provider_payment_type' => $entity->getProviderPaymentType(),
             'provider_payment_method' => $entity->getProviderPaymentMethod(),
+            'active_payment_internal_id' => $entity->getActivePaymentInternalId(),
             'amount_total' => $entity->getAmountTotal(),
             'currency_iso' => $entity->getCurrencyIso(),
             'last_support_message' => $entity->getLastSupportMessage(),

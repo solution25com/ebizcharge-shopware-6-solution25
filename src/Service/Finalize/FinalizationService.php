@@ -58,6 +58,53 @@ final class FinalizationService
         };
     }
 
+    public function reconcile(
+        string $lookupKey,
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        Context $context,
+        string $formType = 'Webform'
+    ): FinalizationOutcome {
+        try {
+            $verificationData = $this->verifyBySearch($lookupKey, $orderData, $config, $context, $formType, $lookupKey);
+
+            /** @var ProviderOperationResult $result */
+            $result = $verificationData['result'];
+
+            return $this->handleImmediate(
+                $orderData,
+                $result,
+                $config,
+                $context,
+                $result->outcome !== ProviderOperationResult::OUTCOME_APPROVED
+                    && $result->outcome !== ProviderOperationResult::OUTCOME_CANCELLED,
+                $result->outcome === ProviderOperationResult::OUTCOME_CANCELLED,
+                $verificationData['paymentInternalId']
+            );
+        } catch (VerificationException | ProviderCommunicationException $exception) {
+            $this->logger->warning('EBizCharge embedded reconciliation could not verify the charge.', [
+                'orderTransactionId' => $orderData->orderTransactionId,
+                'lookupKey' => $lookupKey,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->handleImmediate(
+                $orderData,
+                ProviderOperationResult::pending(
+                    $config->processingCommand(),
+                    'Payment result is pending provider verification.',
+                    true,
+                    'verification_pending'
+                ),
+                $config,
+                $context,
+                true,
+                false,
+                null
+            );
+        }
+    }
+
     private function handleBrowserReturn(
         Request $request,
         BrowserReturnOutcome $browserOutcome,
@@ -143,9 +190,23 @@ final class FinalizationService
             ];
         }
 
+        return $this->verifyBySearch($orderData->orderTransactionId, $orderData, $config, $context, $formType);
+    }
+
+    /**
+     * @return array{result: ProviderOperationResult, paymentInternalId: ?string}
+     */
+    private function verifyBySearch(
+        string $lookupKey,
+        CheckoutOrderData $orderData,
+        PluginConfig $config,
+        Context $context,
+        string $formType = 'Webform',
+        ?string $expectedLookupKey = null
+    ): array {
         $response = $this->providerClient->send(
             ProviderOperation::SEARCH_RECEIVED_PAYMENTS,
-            $this->searchReceivedPaymentsRequestBuilder->build($orderData->orderTransactionId, $orderData, $config, $formType),
+            $this->searchReceivedPaymentsRequestBuilder->build($lookupKey, $orderData, $config, $formType),
             $config
         );
 
@@ -172,7 +233,8 @@ final class FinalizationService
                     $config->processingCommand(),
                     $orderData,
                     $referenceNumber,
-                    $config->enforceAvsCheck()
+                    $config->enforceAvsCheck(),
+                    $expectedLookupKey
                 ),
                 'paymentInternalId' => $paymentInternalId,
             ];
@@ -184,7 +246,8 @@ final class FinalizationService
                 $config->processingCommand(),
                 $orderData,
                 null,
-                $config->enforceAvsCheck()
+                $config->enforceAvsCheck(),
+                $expectedLookupKey
             ),
             'paymentInternalId' => $paymentInternalId,
         ];
@@ -306,6 +369,7 @@ final class FinalizationService
             'mode' => $result->operationMode,
             'provider_payment_type' => $result->providerPaymentType,
             'provider_payment_method' => $result->providerPaymentMethod,
+            'active_payment_internal_id' => $result->outcome === ProviderOperationResult::OUTCOME_APPROVED ? null : $paymentInternalId,
             'last_support_message' => $result->supportMessage,
             'last_sync_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
         ], $context);

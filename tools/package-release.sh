@@ -27,7 +27,7 @@ trap cleanup EXIT
 
 mkdir -p "$RELEASE_DIR" "$STAGE_DIR"
 
-for required in "$ROOT_DIR/composer.json" "$ROOT_DIR/README.md" "$ROOT_DIR/CHANGELOG.md" "$ROOT_DIR/src/Resources/config/config.xml" "$ROOT_DIR/src/Resources/config/plugin.png" "$ROOT_DIR/src/Resources/config/services.xml" "$ROOT_DIR/src/Resources/public/administration/$ADMIN_ENTRY"; do
+for required in "$ROOT_DIR/composer.json" "$ROOT_DIR/README.md" "$ROOT_DIR/CHANGELOG.md" "$ROOT_DIR/src/Resources/config/plugin.png" "$ROOT_DIR/src/Resources/config/services.xml" "$ROOT_DIR/src/Resources/public/administration/$ADMIN_ENTRY"; do
     if [[ ! -e "$required" ]]; then
         echo "Missing required release file: $required" >&2
         exit 1

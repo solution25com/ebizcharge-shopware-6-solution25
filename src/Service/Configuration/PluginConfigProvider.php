@@ -36,7 +36,8 @@ final class PluginConfigProvider
             (bool) ($this->systemConfigService->get(self::DOMAIN . 'enforceAvsCheck', $salesChannelId) ?? false),
             (string) ($this->systemConfigService->get(self::DOMAIN . 'webhookBasicUsername', $salesChannelId) ?? ''),
             (string) ($this->systemConfigService->get(self::DOMAIN . 'webhookBasicPassword', $salesChannelId) ?? ''),
-            (string) ($this->systemConfigService->get(self::DOMAIN . 'webhookSignatureKey', $salesChannelId) ?? '')
+            (string) ($this->systemConfigService->get(self::DOMAIN . 'webhookSignatureKey', $salesChannelId) ?? ''),
+            (string) ($this->systemConfigService->get(self::DOMAIN . 'paymentFlow', $salesChannelId) ?? PluginConfig::FLOW_REDIRECT)
         );
     }
 }

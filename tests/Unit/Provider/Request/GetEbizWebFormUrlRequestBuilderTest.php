@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace EbizChargeShopware\Tests\Unit\Provider\Request;
 
 use EbizChargeShopware\Provider\Request\GetEbizWebFormUrlRequestBuilder;
-use EbizChargeShopware\Provider\Request\ReturnUrlBuilder;
 use EbizChargeShopware\ValueObject\AddressData;
 use EbizChargeShopware\ValueObject\CheckoutOrderData;
 use EbizChargeShopware\ValueObject\LineItemData;
@@ -16,7 +15,7 @@ final class GetEbizWebFormUrlRequestBuilderTest extends TestCase
 {
     public function testBuildsHostedPaymentMethodPayloadWithoutForbiddenFields(): void
     {
-        $builder = new GetEbizWebFormUrlRequestBuilder(new ReturnUrlBuilder());
+        $builder = new GetEbizWebFormUrlRequestBuilder();
         $orderData = new CheckoutOrderData(
             'order-id',
             'transaction-id',
@@ -66,7 +65,7 @@ final class GetEbizWebFormUrlRequestBuilderTest extends TestCase
         self::assertSame(50.0, $payload['ePaymentForm']['lineItems'][0]['unitPrice']);
         self::assertSame('ACME', $payload['ePaymentForm']['billingAddress']['companyName']);
         self::assertSame('CA', $payload['ePaymentForm']['billingAddress']['state']);
-        self::assertStringContainsString('ebizchargeResult=approved', $payload['ePaymentForm']['approvedURL']);
+        self::assertSame('https://shop.test/payment/finalize-transaction', $payload['ePaymentForm']['approvedURL']);
         self::assertArrayNotHasKey('currency', $payload['ePaymentForm']);
         self::assertArrayNotHasKey('allowPartialAuth', $payload['ePaymentForm']);
         self::assertArrayNotHasKey('ifAuthExpired', $payload['ePaymentForm']);

@@ -1,0 +1,10 @@
+/.work/
+/vendor/
+/node_modules/
+/.idea/
+/.DS_Store
+/var/
+/docs/input/raw/
+/release/tmp/
+/release/*.tmp
+/release/*.log

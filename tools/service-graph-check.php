@@ -30,6 +30,7 @@ $coreServiceTypes = [
     'router' => Symfony\Component\Routing\RouterInterface::class,
     'twig' => Twig\Environment::class,
     'Shopware\Core\Content\Mail\Service\MailService' => Shopware\Core\Content\Mail\Service\MailService::class,
+    'Shopware\Core\Checkout\Cart\SalesChannel\CartService' => Shopware\Core\Checkout\Cart\SalesChannel\CartService::class,
     'Doctrine\DBAL\Connection' => Doctrine\DBAL\Connection::class,
     'Shopware\Core\System\SystemConfig\SystemConfigService' => Shopware\Core\System\SystemConfig\SystemConfigService::class,
     'Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler' => Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler::class,
@@ -152,7 +153,7 @@ foreach ($graph['services'] as $id => $definition) {
             continue;
         }
 
-        if (!is_a($resolvedReferenceClass, $typeName, true)) {
+        if ($resolvedReferenceClass !== $typeName && !is_a($resolvedReferenceClass, $typeName, true)) {
             $violations[] = sprintf(
                 'Service "%s" constructor parameter $%s expects %s, but "%s" resolves to %s.',
                 $id,

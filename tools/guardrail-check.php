@@ -159,16 +159,19 @@ mustContain($root . '/src/Resources/config/services/commands.xml', [
     'ebizcharge:test-connection',
 ], $violations);
 
-mustContain($root . '/src/Resources/config/config.xml', [
+mustContain($root . '/src/Resources/app/administration/src/module/ebizcharge-settings/page/ebizcharge-settings-index/index.js', [
     'environmentMode',
     'sandboxBaseUrl',
     'productionBaseUrl',
     'processingCommand',
     'shipFromZip',
     'retryCount',
-    'ebizcharge-api-test',
 ], $violations);
-mustNotContain($root . '/src/Resources/config/config.xml', [
+mustContain($root . '/src/Resources/app/administration/src/module/ebizcharge-settings/page/ebizcharge-settings-index/ebizcharge-settings-index.html.twig', [
+    'ebizcharge-api-test',
+    'ebizcharge.configValidation.bannerTitle',
+], $violations);
+mustNotContain($root . '/src/Resources/app/administration/src/module/ebizcharge-settings/page/ebizcharge-settings-index/index.js', [
     'debugLogging',
 ], $violations);
 
@@ -220,7 +223,7 @@ mustNotContain($root . '/src/Checkout/Payment/Handler/CreditCardPaymentHandler.p
 ], $violations);
 
 mustContain($root . '/src/Service/Checkout/OrderTransactionLoader.php', [
-    'getAmount()->getTotalPrice()',
+    'getAmountTotal()',
     'normalizeOrderDate',
     'DateTimeInterface::ATOM',
 ], $violations);
@@ -318,7 +321,7 @@ mustNotContain($root . '/src/Resources/app/administration/src', [
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `1.0.5`',
+    'Version `1.0.6`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
@@ -330,9 +333,12 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
-    '## [1.0.5]',
-    'Fixed saved bank-account checkout so payments complete with the selected saved account.',
-    'Fixed hosted checkout and Pay by Link cleanup so completed payments are acknowledged in EBizCharge after Shopware accepts them.',
+    '## [1.0.6]',
+    'Kept abandoned hosted checkout transactions payable from the customer order history by using Shopware\'s unconfirmed transaction state.',
+    'Replaced older EBizCharge hosted webform requests when new Pay by Link or hosted checkout forms are generated.',
+    'Added an embedded storefront hosted webform checkout option while preserving the redirect flow option.',
+    'Deleted outstanding hosted webform requests before uninstall data removal drops the stored request identifiers.',
+    'Aligned configuration validation errors.',
 ], $violations);
 mustNotContain($root . '/CHANGELOG.md', [
     'Dedicated logger channel `ebizcharge_payment`',
@@ -364,7 +370,7 @@ mustContain($root . '/tools/self-test.php', [
 ], $violations);
 
 mustContain($root . '/composer.json', [
-    '"version": "1.0.5"',
+    '"version": "1.0.6"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

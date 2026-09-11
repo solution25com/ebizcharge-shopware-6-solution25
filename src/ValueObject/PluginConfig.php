@@ -8,6 +8,9 @@ use EbizChargeShopware\Exception\ConfigurationException;
 
 final class PluginConfig
 {
+    public const FLOW_REDIRECT = 'redirect';
+    public const FLOW_EMBEDDED = 'embedded';
+
     public function __construct(
         private readonly string $environmentMode,
         private readonly string $baseUrl,
@@ -24,7 +27,8 @@ final class PluginConfig
         private readonly bool $enforceAvsCheck = false,
         private readonly string $webhookBasicUsername = '',
         private readonly string $webhookBasicPassword = '',
-        private readonly string $webhookSignatureKey = ''
+        private readonly string $webhookSignatureKey = '',
+        private readonly string $paymentFlow = self::FLOW_REDIRECT
     ) {
     }
 
@@ -126,6 +130,16 @@ final class PluginConfig
     public function enforceAvsCheck(): bool
     {
         return $this->enforceAvsCheck;
+    }
+
+    public function paymentFlow(): string
+    {
+        return $this->paymentFlow === self::FLOW_EMBEDDED ? self::FLOW_EMBEDDED : self::FLOW_REDIRECT;
+    }
+
+    public function isEmbeddedFlow(): bool
+    {
+        return $this->paymentFlow() === self::FLOW_EMBEDDED;
     }
 
     public function credentialFingerprint(): string

@@ -10,9 +10,22 @@
       "hostedFormOption": "Mit neuer Zahlungsmethode zahlen",
       "savedAchGroup": "Mit gespeichertem Bankkonto zahlen",
       "savedCardGroup": "Mit gespeicherter Karte zahlen",
+      "configurationUnavailable": "EBizCharge-Zahlungsmethoden sind nicht verfugbar, da die Zahlungsverbindung noch nicht konfiguriert und validiert wurde.",
       "cardCodeLabel": "Sicherheitscode",
       "cardCodeTitle": "Geben Sie 3 oder 4 Ziffern ein.",
       "expiresShort": "gultig bis %date%"
+    },
+    "embedded": {
+      "loading": "Sicheres Zahlungsformular wird geladen...",
+      "approved": "Zahlung erhalten. Bestellung wird abgeschlossen...",
+      "declined": "Die Zahlung wurde abgelehnt. Bitte versuchen Sie eine andere Karte.",
+      "error": "Das Zahlungsformular konnte nicht geladen werden. Bitte erneut versuchen.",
+      "completeManually": "Zahlung erhalten. Bitte akzeptieren Sie die Bedingungen und schliessen Sie die Bestellung ab.",
+      "frameTitle": "Sicheres EBizCharge-Zahlungsformular",
+      "returnTitle": "Zahlung wird abgeschlossen",
+      "returnApproved": "Zahlung erhalten. Bestellung wird abgeschlossen...",
+      "returnDeclined": "Die Zahlung wurde abgelehnt. Sie konnen es erneut versuchen.",
+      "returnProcessing": "Zahlungsergebnis wird verarbeitet..."
     },
     "admin": {
       "connectionSuccess": "Verbindungstest erfolgreich.",
@@ -22,6 +35,7 @@
       "menuTitle": "EBizCharge gespeicherte Zahlungsmethoden",
       "title": "EBizCharge gespeicherte Zahlungsmethoden",
       "intro": "Verwalten Sie Ihre gespeicherten Zahlungsmethoden sicher mit EBizCharge.",
+      "configurationUnavailable": "Der Handler hat die EBizCharge-Verbindung noch nicht validiert. Bitte versuchen Sie es spater erneut.",
       "addCard": "Zahlungsmethode hinzufugen",
       "refreshCards": "Zahlungsmethoden aktualisieren",
       "empty": "Sie haben noch keine gespeicherten Zahlungsmethoden.",

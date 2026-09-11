@@ -17,6 +17,7 @@ use EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder;
 use EbizChargeShopware\Provider\Request\SecurityTokenPayloadFactory;
 use EbizChargeShopware\Provider\Response\ResponseNormalizer;
 use EbizChargeShopware\Service\Checkout\HostedCheckoutService;
+use EbizChargeShopware\Service\Checkout\HostedWebformRequestCleanupService;
 use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
 use EbizChargeShopware\Service\Connection\ConnectionHealthRegistry;
 use EbizChargeShopware\Service\Connection\ConnectionTestService;
@@ -25,6 +26,7 @@ use EbizChargeShopware\Service\Finalize\FinalizationService;
 use EbizChargeShopware\Service\EbizChargeApiClient;
 use EbizChargeShopware\Service\EbizChargeCustomerVaultService;
 use EbizChargeShopware\Service\PaymentLinkService;
+use EbizChargeShopware\Service\ProviderCustomerSyncService;
 use EbizChargeShopware\Service\StateSync\StateTransitionPolicy;
 use EbizChargeShopware\Service\StateSync\TransactionStateResolver;
 use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
@@ -390,6 +392,70 @@ $tests['customer-vault-normalizes-card-and-ach-methods'] = static function (): v
     same('xxxx6789', $maskedPaymentAccount->invoke($service, $achProfile, 'ach'), 'ACH profile should display a masked account.');
 };
 
+$tests['provider-customer-sync-adds-missing-customer-before-webform'] = static function (): void {
+    $providerClient = new class implements ProviderClientInterface {
+        public array $operations = [];
+
+        public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
+        {
+            $this->operations[] = [$operation, $payload];
+
+            return match ($operation) {
+                ProviderOperation::SEARCH_CUSTOMERS => [
+                    'statusCode' => 200,
+                    'body' => ['searchCustomersResponse' => ['SearchCustomersResult' => []]],
+                    'rawBody' => '{}',
+                ],
+                ProviderOperation::ADD_CUSTOMER => [
+                    'statusCode' => 200,
+                    'body' => ['addCustomerResponse' => ['addCustomerResult' => ['CustomerInternalId' => 'internal-id']]],
+                    'rawBody' => '{}',
+                ],
+                default => throw new RuntimeException('Unexpected operation: ' . $operation->value),
+            };
+        }
+    };
+
+    $service = new ProviderCustomerSyncService($providerClient, new ResponseNormalizer());
+    $service->syncFromOrder(baseOrderData(), baseConfig());
+
+    same(ProviderOperation::SEARCH_CUSTOMERS, $providerClient->operations[0][0], 'Customer sync must search first.');
+    same(ProviderOperation::ADD_CUSTOMER, $providerClient->operations[1][0], 'Missing customer must be added.');
+    same('customer-id', $providerClient->operations[1][1]['customer']['customerId'], 'Customer ID mismatch.');
+    same('Jane', $providerClient->operations[1][1]['customer']['firstName'], 'Customer first name mismatch.');
+    same('Doe', $providerClient->operations[1][1]['customer']['lastName'], 'Customer last name mismatch.');
+    same('buyer@example.com', $providerClient->operations[1][1]['customer']['email'], 'Customer email mismatch.');
+};
+
+$tests['provider-customer-sync-skips-existing-customer'] = static function (): void {
+    $providerClient = new class implements ProviderClientInterface {
+        public array $operations = [];
+
+        public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
+        {
+            $this->operations[] = [$operation, $payload];
+
+            return match ($operation) {
+                ProviderOperation::SEARCH_CUSTOMERS => [
+                    'statusCode' => 200,
+                    'body' => ['searchCustomersResponse' => ['SearchCustomersResult' => ['Customer' => [
+                        'CustomerId' => 'customer-id',
+                        'CustomerInternalId' => 'internal-id',
+                    ]]]],
+                    'rawBody' => '{}',
+                ],
+                default => throw new RuntimeException('Unexpected operation: ' . $operation->value),
+            };
+        }
+    };
+
+    $service = new ProviderCustomerSyncService($providerClient, new ResponseNormalizer());
+    $service->syncFromOrder(baseOrderData(), baseConfig());
+
+    same(1, count($providerClient->operations), 'Existing customer sync must not call AddCustomer.');
+    same(ProviderOperation::SEARCH_CUSTOMERS, $providerClient->operations[0][0], 'Existing customer sync must search.');
+};
+
 $tests['rest-client-wraps-security-token-and-header'] = static function (): void {
     $transport = new class implements ProviderTransportInterface {
         public array $captured = [];
@@ -522,21 +588,34 @@ $tests['response-normalizer-classifies-auth-statuses-safely'] = static function 
 
 $tests['hosted-checkout-service-stores-redirect-metadata'] = static function (): void {
     $providerClient = new class implements ProviderClientInterface {
+        public array $operations = [];
+
         public function send(ProviderOperation $operation, array $payload, PluginConfig $config): array
         {
-            same(ProviderOperation::GET_WEBFORM_URL, $operation, 'Hosted checkout must call GetEbizWebFormURL.');
+            $this->operations[] = $operation;
 
-            return [
-                'statusCode' => 200,
-                'body' => [
-                    'getEbizWebFormURLResponse' => [
-                        'getEbizWebFormURLResult' => [
-                            'url' => 'https://webforms.ebizcharge.net/EBizSecureForm.aspx?pid=456',
+            return match ($operation) {
+                ProviderOperation::SEARCH_CUSTOMERS => [
+                    'statusCode' => 200,
+                    'body' => ['searchCustomersResponse' => ['SearchCustomersResult' => ['Customer' => [
+                        'CustomerId' => 'customer-id',
+                        'CustomerInternalId' => 'internal-id',
+                    ]]]],
+                    'rawBody' => '{}',
+                ],
+                ProviderOperation::GET_WEBFORM_URL => [
+                    'statusCode' => 200,
+                    'body' => [
+                        'getEbizWebFormURLResponse' => [
+                            'getEbizWebFormURLResult' => [
+                                'url' => 'https://webforms.ebizcharge.net/EBizSecureForm.aspx?pid=456',
+                            ],
                         ],
                     ],
+                    'rawBody' => '{}',
                 ],
-                'rawBody' => '{}',
-            ];
+                default => throw new RuntimeException('Unexpected operation: ' . $operation->value),
+            };
         }
     };
 
@@ -563,7 +642,12 @@ $tests['hosted-checkout-service-stores-redirect-metadata'] = static function ():
         new GetEbizWebFormUrlRequestBuilder(new ReturnUrlBuilder()),
         $providerClient,
         new ResponseNormalizer(),
-        $store
+        $store,
+        new HostedWebformRequestCleanupService(
+            $providerClient,
+            new NullLogger()
+        ),
+        new ProviderCustomerSyncService($providerClient, new ResponseNormalizer())
     );
 
     $redirect = $service->start(
@@ -574,9 +658,11 @@ $tests['hosted-checkout-service-stores-redirect-metadata'] = static function ():
     );
 
     same('https://webforms.ebizcharge.net/EBizSecureForm.aspx?pid=456', $redirect->redirectUrl, 'Redirect URL mismatch.');
+    same(ProviderOperation::SEARCH_CUSTOMERS, $providerClient->operations[0], 'Hosted checkout must sync customer first.');
+    same(ProviderOperation::GET_WEBFORM_URL, $providerClient->operations[1], 'Hosted checkout must create the webform.');
     same('Sale', $redirect->mode, 'Redirect mode mismatch.');
     same('transaction-id', $store->records['transaction-id']['lookup_key'], 'Lookup key record mismatch.');
-    same(40.0, $store->records['transaction-id']['amount_total'], 'Stored amount must use the Shopware transaction amount.');
+    same(40.0, $store->records['transaction-id']['amount_total'], 'Stored amount must use the Shopware order amount.');
     same('USD', $store->records['transaction-id']['currency_iso'], 'Currency record mismatch.');
 };
 
@@ -585,10 +671,34 @@ $tests['state-resolution-and-transition-policy'] = static function (): void {
     same(OrderTransactionStates::STATE_PAID, $resolver->resolve(ProviderOperationResult::approved('Sale', 'ref-1', 'auth-1', 'ok')), 'Sale should map to paid.');
     same(OrderTransactionStates::STATE_AUTHORIZED, $resolver->resolve(ProviderOperationResult::approved('AuthOnly', 'ref-1', 'auth-1', 'ok')), 'AuthOnly should map to authorized.');
     same(OrderTransactionStates::STATE_FAILED, $resolver->resolve(ProviderOperationResult::declined('Sale', 'declined')), 'Decline should map to failed.');
+    same(OrderTransactionStates::STATE_UNCONFIRMED, $resolver->resolve(ProviderOperationResult::pending('Sale', 'Hosted checkout initiated.', true, 'checkout_redirected')), 'Hosted checkout redirect should map to unconfirmed.');
+    same(OrderTransactionStates::STATE_IN_PROGRESS, $resolver->resolve(ProviderOperationResult::pending('Sale', 'Payment result is pending provider verification.', true, 'verification_pending')), 'Generic pending verification should map to in progress.');
 
     $policy = new StateTransitionPolicy();
     ok(!$policy->shouldApply(OrderTransactionStates::STATE_PAID, OrderTransactionStates::STATE_FAILED), 'Paid must not downgrade to failed.');
-    ok($policy->shouldApply(OrderTransactionStates::STATE_OPEN, OrderTransactionStates::STATE_IN_PROGRESS), 'Open should transition to in progress.');
+    ok($policy->shouldApply(OrderTransactionStates::STATE_OPEN, OrderTransactionStates::STATE_UNCONFIRMED), 'Open should transition to unconfirmed.');
+};
+
+$tests['state-sync-hosted-redirect-uses-unconfirmed-transition'] = static function (): void {
+    $store = makeTransactionRecordStore();
+    $stateHandler = new OrderTransactionStateHandler();
+    $service = new TransactionStateSyncService(
+        makeStateRepository(OrderTransactionStates::STATE_OPEN),
+        $stateHandler,
+        new TransactionStateResolver(),
+        new StateTransitionPolicy(),
+        $store,
+        new NullLogger()
+    );
+
+    $state = $service->apply(
+        'transaction-id',
+        ProviderOperationResult::pending('Sale', 'Hosted checkout initiated.', true, 'checkout_redirected'),
+        new Context()
+    );
+
+    same(OrderTransactionStates::STATE_UNCONFIRMED, $state, 'Hosted checkout redirects should persist unconfirmed state.');
+    same(['process_unconfirmed', 'transaction-id'], $stateHandler->transitions[0], 'Hosted checkout redirects should use the unconfirmed transition.');
 };
 
 $tests['state-sync-illegal-transition-persists-actual-shopware-state'] = static function (): void {

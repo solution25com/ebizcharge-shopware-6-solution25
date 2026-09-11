@@ -751,6 +751,7 @@ namespace Shopware\Core\Checkout\Order\Aggregate\OrderTransaction {
         {
             public const STATE_OPEN = 'open';
             public const STATE_IN_PROGRESS = 'in_progress';
+            public const STATE_UNCONFIRMED = 'unconfirmed';
             public const STATE_PAID = 'paid';
             public const STATE_AUTHORIZED = 'authorized';
             public const STATE_FAILED = 'failed';
@@ -814,6 +815,11 @@ namespace Shopware\Core\Checkout\Order\Aggregate\OrderTransaction {
             public function process(string $id, object $context): void
             {
                 $this->transitions[] = ['process', $id];
+            }
+
+            public function processUnconfirmed(string $id, object $context): void
+            {
+                $this->transitions[] = ['process_unconfirmed', $id];
             }
         }
     }

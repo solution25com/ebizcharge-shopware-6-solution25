@@ -32,7 +32,8 @@ final class ResponseNormalizer
         string $fallbackOperationMode,
         ?CheckoutOrderData $orderData = null,
         ?string $expectedReference = null,
-        bool $enforceAvsCheck = false
+        bool $enforceAvsCheck = false,
+        ?string $expectedLookupKey = null
     ): ProviderOperationResult {
         $paymentNode = $this->findFirstPaymentNode($body);
 
@@ -55,7 +56,7 @@ final class ResponseNormalizer
         }
 
         if ($orderData !== null) {
-            $this->assertCorrelatesToOrder($paymentNode, $orderData);
+            $this->assertCorrelatesToOrder($paymentNode, $orderData, $expectedLookupKey);
         }
 
         $operationMode = $paymentType !== '' ? $paymentType : $fallbackOperationMode;
@@ -227,7 +228,7 @@ final class ResponseNormalizer
     /**
      * @param array<string, mixed> $node
      */
-    private function assertCorrelatesToOrder(array $node, CheckoutOrderData $orderData): void
+    private function assertCorrelatesToOrder(array $node, CheckoutOrderData $orderData, ?string $expectedLookupKey = null): void
     {
         $lookupKey = $this->stringOrNull($node['TransactionLookupKey'] ?? $node['transactionLookupKey'] ?? $node['lookupKey'] ?? null);
         $orderId = $this->stringOrNull($node['OrderId'] ?? $node['orderId'] ?? $node['OrderNumber'] ?? $node['orderNumber'] ?? null);
@@ -237,21 +238,27 @@ final class ResponseNormalizer
             $this->stringOrNull($node['Currency'] ?? $node['currency'] ?? null)
         );
 
-        if ($lookupKey !== null && !hash_equals($orderData->orderTransactionId, $lookupKey)) {
-            throw new VerificationException('The provider verification response did not match the Shopware order transaction.');
-        }
-
-        if ($lookupKey === null) {
-            if ($orderId === null && $invoiceNumber === null) {
-                throw new VerificationException('The provider verification response did not contain a Shopware order correlation key.');
+        if ($expectedLookupKey !== null) {
+            if ($lookupKey !== null && !hash_equals($expectedLookupKey, $lookupKey)) {
+                throw new VerificationException('The provider verification response did not match the expected embedded payment.');
+            }
+        } else {
+            if ($lookupKey !== null && !hash_equals($orderData->orderTransactionId, $lookupKey)) {
+                throw new VerificationException('The provider verification response did not match the Shopware order transaction.');
             }
 
-            if ($orderId !== null && !$this->matchesOrderIdentity($orderData, $orderId)) {
-                throw new VerificationException('The provider verification orderId did not match the Shopware order.');
-            }
+            if ($lookupKey === null) {
+                if ($orderId === null && $invoiceNumber === null) {
+                    throw new VerificationException('The provider verification response did not contain a Shopware order correlation key.');
+                }
 
-            if ($invoiceNumber !== null && !$this->matchesOrderIdentity($orderData, $invoiceNumber)) {
-                throw new VerificationException('The provider verification invoiceNumber did not match the Shopware order.');
+                if ($orderId !== null && !$this->matchesOrderIdentity($orderData, $orderId)) {
+                    throw new VerificationException('The provider verification orderId did not match the Shopware order.');
+                }
+
+                if ($invoiceNumber !== null && !$this->matchesOrderIdentity($orderData, $invoiceNumber)) {
+                    throw new VerificationException('The provider verification invoiceNumber did not match the Shopware order.');
+                }
             }
         }
 

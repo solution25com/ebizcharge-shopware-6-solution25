@@ -11,6 +11,13 @@ final class TransactionStateResolver
 {
     public function resolve(ProviderOperationResult $result): string
     {
+        if (
+            $result->outcome === ProviderOperationResult::OUTCOME_PENDING
+            && $result->failureCategory === 'checkout_redirected'
+        ) {
+            return OrderTransactionStates::STATE_UNCONFIRMED;
+        }
+
         return match ($result->outcome) {
             ProviderOperationResult::OUTCOME_APPROVED => strtoupper($result->operationMode) === 'AUTHONLY'
                 ? OrderTransactionStates::STATE_AUTHORIZED

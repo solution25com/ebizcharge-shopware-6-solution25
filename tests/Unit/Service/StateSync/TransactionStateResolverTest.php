@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace EbizChargeShopware\Tests\Unit\Service\StateSync;
 
@@ -31,5 +33,26 @@ final class TransactionStateResolverTest extends TestCase
         $result = ProviderOperationResult::declined('Sale', 'declined');
 
         self::assertSame(OrderTransactionStates::STATE_FAILED, $resolver->resolve($result));
+    }
+
+    public function testHostedCheckoutRedirectPendingMapsToUnconfirmed(): void
+    {
+        $resolver = new TransactionStateResolver();
+        $result = ProviderOperationResult::pending('Sale', 'Hosted checkout initiated.', true, 'checkout_redirected');
+
+        self::assertSame(OrderTransactionStates::STATE_UNCONFIRMED, $resolver->resolve($result));
+    }
+
+    public function testGenericPendingMapsToInProgress(): void
+    {
+        $resolver = new TransactionStateResolver();
+        $result = ProviderOperationResult::pending(
+            'Sale',
+            'Payment result is pending provider verification.',
+            true,
+            'verification_pending'
+        );
+
+        self::assertSame(OrderTransactionStates::STATE_IN_PROGRESS, $resolver->resolve($result));
     }
 }

@@ -2,10 +2,12 @@
   "base": "/bundles/ebizchargeshopware/administration/",
   "entryPoints": {
     "ebiz-charge-shopware": {
-      "css": [],
+      "css": [
+        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-BK6I7fnR.css"
+      ],
       "dynamic": [],
       "js": [
-        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-DWz2lnRu.js"
+        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-BItv-6GZ.js"
       ],
       "legacy": false,
       "preload": []
