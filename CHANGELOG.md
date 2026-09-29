@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.7] - 2026-09-29
+- Updated storefront payment method management UI
+
 ## [1.0.6] - 2026-09-10
 
 ### Fixed
