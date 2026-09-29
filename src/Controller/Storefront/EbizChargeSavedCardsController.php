@@ -29,7 +29,7 @@ final class EbizChargeSavedCardsController extends StorefrontController
         methods: ['GET'],
         defaults: ['_loginRequired' => true]
     )]
-    public function index(Request $request, SalesChannelContext $context): Response
+    public function index(SalesChannelContext $context): Response
     {
         $customer = $context->getCustomer();
         if ($customer === null || $customer->getGuest()) {
@@ -47,18 +47,10 @@ final class EbizChargeSavedCardsController extends StorefrontController
             $customerVault,
             $context->getContext()
         );
-        $addCardUrl = null;
-        if ((string) $request->query->get('addCard', '') === '1') {
-            try {
-                $addCardUrl = $this->customerVaultService->getAccountAddPaymentMethodHostedUrl($context);
-            } catch (\Throwable) {
-                $this->addFlash('danger', $this->trans('ebizcharge.account.addStartFailed'));
-            }
-        }
-
         return $this->renderStorefront('@EbizChargeShopware/storefront/page/account/ebizcharge-saved-cards.html.twig', [
             'savedPaymentMethods' => $savedPaymentMethods,
-            'addCardUrl' => $addCardUrl,
+            'addCardUrl' => null,
+            'isAddPaymentMethodPage' => false,
             'ebizchargeSavedCardsAvailable' => true,
         ]);
     }
@@ -145,10 +137,25 @@ final class EbizChargeSavedCardsController extends StorefrontController
         }
 
         if (!$this->isConnectionReady($context)) {
+            $this->addFlash('info', $this->trans('ebizcharge.account.configurationUnavailable'));
+
             return $this->redirectUnavailable();
         }
 
-        return $this->redirectToRoute('frontend.account.ebizcharge.saved-cards.index', ['addCard' => '1']);
+        try {
+            $addCardUrl = $this->customerVaultService->getAccountAddPaymentMethodHostedUrl($context);
+        } catch (\Throwable) {
+            $this->addFlash('danger', $this->trans('ebizcharge.account.addStartFailed'));
+
+            return $this->redirectSaved();
+        }
+
+        return $this->renderStorefront('@EbizChargeShopware/storefront/page/account/ebizcharge-saved-cards.html.twig', [
+            'savedPaymentMethods' => [],
+            'addCardUrl' => $addCardUrl,
+            'isAddPaymentMethodPage' => true,
+            'ebizchargeSavedCardsAvailable' => true,
+        ]);
     }
 
     private function redirectSaved(): Response

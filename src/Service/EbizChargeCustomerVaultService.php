@@ -187,6 +187,20 @@ final class EbizChargeCustomerVaultService
                 : $this->normalizeCardBrand($profile['CardType'] ?? $profile['cardType'] ?? 'Card');
             $expiry = $profile['CardExpiration'] ?? $profile['cardExpiration'] ?? '';
             $name = $profile['MethodName'] ?? $profile['methodName'] ?? '';
+            $accountHolder = $profile['AccountHolder']
+                ?? $profile['AccountHolderName']
+                ?? $profile['NameOnAccount']
+                ?? $profile['accountHolder']
+                ?? $profile['accountHolderName']
+                ?? $profile['nameOnAccount']
+                ?? '';
+            $routing = $profile['Routing']
+                ?? $profile['RoutingNumber']
+                ?? $profile['BankRouting']
+                ?? $profile['routing']
+                ?? $profile['routingNumber']
+                ?? $profile['bankRouting']
+                ?? '';
             $isDefault = $defaultId !== null && hash_equals($defaultId, $methodId);
             $defaultFound = $defaultFound || $isDefault;
 
@@ -197,6 +211,8 @@ final class EbizChargeCustomerVaultService
                 'brand' => is_scalar($brand) ? trim((string) $brand) : '',
                 'expiry' => $methodType === 'card' && is_scalar($expiry) ? trim((string) $expiry) : '',
                 'name' => is_scalar($name) ? trim((string) $name) : '',
+                'accountHolder' => $methodType === 'ach' && is_scalar($accountHolder) ? trim((string) $accountHolder) : '',
+                'routing' => $methodType === 'ach' && is_scalar($routing) ? trim((string) $routing) : '',
                 'requiresCardCode' => $methodType === 'card',
                 'isDefault' => $isDefault,
             ];
@@ -244,8 +260,10 @@ final class EbizChargeCustomerVaultService
                 'last4Digits' => $this->extractLast4Digits($masked),
                 'brand' => $brand,
                 'brandKey' => $type === 'ach' ? 'bank' : $this->normalizeBrandKey($brand),
-                'expiry' => (string) ($method['expiry'] ?? ''),
+                'expiry' => $type === 'card' ? $this->formatCardExpiry((string) ($method['expiry'] ?? '')) : '',
                 'methodName' => (string) ($method['name'] ?? ''),
+                'accountHolder' => (string) ($method['accountHolder'] ?? ''),
+                'routingLast4Digits' => $type === 'ach' ? $this->extractLast4Digits((string) ($method['routing'] ?? '')) : '',
                 'requiresCardCode' => !empty($method['requiresCardCode']),
                 'isDefault' => !empty($method['isDefault']),
             ];
@@ -265,6 +283,28 @@ final class EbizChargeCustomerVaultService
         return substr($digits, -4);
     }
 
+    private function formatCardExpiry(string $expiry): string
+    {
+        $expiry = trim($expiry);
+        if ($expiry === '') {
+            return '';
+        }
+
+        if (preg_match('/^(?<year>\d{4})[-\/](?<month>\d{1,2})$/', $expiry, $matches) === 1) {
+            return sprintf('%02d/%02d', (int) $matches['month'], ((int) $matches['year']) % 100);
+        }
+
+        if (preg_match('/^(?<month>\d{1,2})[-\/](?<year>\d{2}|\d{4})$/', $expiry, $matches) === 1) {
+            return sprintf('%02d/%02d', (int) $matches['month'], ((int) $matches['year']) % 100);
+        }
+
+        if (preg_match('/^(?<month>\d{2})(?<year>\d{2})$/', $expiry, $matches) === 1) {
+            return sprintf('%s/%s', $matches['month'], $matches['year']);
+        }
+
+        return $expiry;
+    }
+
     private function normalizeBrandKey(string $brand): string
     {
         return match (strtolower(trim($brand))) {
@@ -272,6 +312,9 @@ final class EbizChargeCustomerVaultService
             'mastercard', 'master card', 'mc', 'm' => 'mastercard',
             'american express', 'amex', 'a' => 'amex',
             'discover', 'disc', 'd', 'ds' => 'discover',
+            'diners', 'diners club', 'dc' => 'diners',
+            'jcb', 'j' => 'jcb',
+            'unionpay', 'union pay', 'china unionpay', 'union' => 'unionpay',
             default => 'card',
         };
     }
