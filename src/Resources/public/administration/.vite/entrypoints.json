@@ -3,11 +3,11 @@
   "entryPoints": {
     "ebiz-charge-shopware": {
       "css": [
-        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-BK6I7fnR.css"
+        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-CHNvaPVj.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-BItv-6GZ.js"
+        "/bundles/ebizchargeshopware/administration/assets/ebiz-charge-shopware-BAoLe6M8.js"
       ],
       "legacy": false,
       "preload": []

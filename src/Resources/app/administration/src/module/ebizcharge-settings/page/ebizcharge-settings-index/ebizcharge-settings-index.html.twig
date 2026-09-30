@@ -239,6 +239,23 @@
                     v-model="configValues[configKey('webhookSignatureKey')]"
                     :label="$tc('ebizcharge.settings.webhookSignatureKey')"
                 />
+
+                <div class="ebizcharge-settings-index__webhook-support">
+                    <mt-text-field
+                        :model-value="webhookEndpointUrl"
+                        :label="$tc('ebizcharge.settings.webhookEndpointLabel')"
+                        :help-text="$tc('ebizcharge.settings.webhookEndpointHelpText')"
+                        readonly
+                    />
+
+                    <mt-button
+                        variant="secondary"
+                        size="small"
+                        @click="onCopyWebhookEndpointUrl"
+                    >
+                        {{ $tc('ebizcharge.settings.webhookEndpointCopyButton') }}
+                    </mt-button>
+                </div>
             </mt-card>
         </sw-card-view>
     </template>

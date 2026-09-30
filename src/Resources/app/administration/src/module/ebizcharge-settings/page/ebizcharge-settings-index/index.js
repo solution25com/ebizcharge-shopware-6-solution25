@@ -3,6 +3,7 @@ import './ebizcharge-settings-index.scss';
 
 const { Component, Mixin } = Shopware;
 const { ShopwareError } = Shopware.Classes;
+const { Criteria } = Shopware.Data;
 
 const CONFIG_DOMAIN = 'EbizChargeShopware.config';
 
@@ -61,6 +62,7 @@ Component.register('ebizcharge-settings-index', {
     template,
 
     inject: [
+        'repositoryFactory',
         'shopwareExtensionService',
         'systemConfigApiService',
     ],
@@ -76,6 +78,7 @@ Component.register('ebizcharge-settings-index', {
             extension: null,
             fieldErrors: {},
             isLoading: false,
+            storefrontDomainUrl: null,
         };
     },
 
@@ -142,6 +145,14 @@ Component.register('ebizcharge-settings-index', {
 
             return Object.entries(grouped).map(([detail, count]) => `${count}x "${detail}"`);
         },
+
+        storefrontBaseUrl() {
+            return this.storefrontDomainUrl || window.location.origin;
+        },
+
+        webhookEndpointUrl() {
+            return `${this.storefrontBaseUrl}/ebizcharge/webhook`;
+        },
     },
 
     created() {
@@ -158,12 +169,40 @@ Component.register('ebizcharge-settings-index', {
                 return extension.name === 'EbizChargeShopware';
             }) || null;
 
-            await this.loadConfig();
+            await Promise.all([
+                this.loadConfig(),
+                this.loadStorefrontDomainUrl(),
+            ]);
         },
 
         async onSalesChannelChanged(salesChannelId) {
             this.currentSalesChannelId = salesChannelId;
-            await this.loadConfig();
+            await Promise.all([
+                this.loadConfig(),
+                this.loadStorefrontDomainUrl(),
+            ]);
+        },
+
+        async loadStorefrontDomainUrl() {
+            this.storefrontDomainUrl = null;
+
+            if (!this.currentSalesChannelId) {
+                return;
+            }
+
+            try {
+                const repository = this.repositoryFactory.create('sales_channel_domain');
+                const criteria = new Criteria(1, 1);
+                criteria.addFilter(Criteria.equals('salesChannelId', this.currentSalesChannelId));
+                criteria.addSorting(Criteria.sort('createdAt', 'ASC'));
+
+                const domains = await repository.search(criteria);
+                const domain = domains.first();
+
+                this.storefrontDomainUrl = this.normalizeStorefrontDomainUrl(domain?.url);
+            } catch {
+                this.storefrontDomainUrl = null;
+            }
         },
 
         async loadConfig() {
@@ -288,8 +327,49 @@ Component.register('ebizcharge-settings-index', {
             return value !== null && value !== undefined;
         },
 
+        async onCopyWebhookEndpointUrl() {
+            try {
+                await this.copyTextToClipboard(this.webhookEndpointUrl);
+
+                this.createNotificationSuccess({
+                    message: this.$tc('ebizcharge.settings.webhookEndpointCopied'),
+                });
+            } catch {
+                this.createNotificationError({
+                    message: this.$tc('ebizcharge.settings.webhookEndpointCopyError'),
+                });
+            }
+        },
+
+        async copyTextToClipboard(text) {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                return;
+            }
+
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.setAttribute('readonly', 'readonly');
+            textArea.style.position = 'fixed';
+            textArea.style.top = '-1000px';
+            textArea.style.left = '-1000px';
+
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        },
+
         configKey(fieldName) {
             return `${CONFIG_DOMAIN}.${fieldName}`;
+        },
+
+        normalizeStorefrontDomainUrl(url) {
+            if (typeof url !== 'string' || url.trim() === '') {
+                return null;
+            }
+
+            return url.trim().replace(/\/+$/, '');
         },
     },
 });

@@ -39,7 +39,12 @@
       "retryCountHelpText": "Nur für Netzwerkfehler und Provider-5xx-Antworten. Der maximal wirksame Wert ist 3.",
       "webhookBasicUsername": "Webhook Basic Auth Benutzername",
       "webhookBasicPassword": "Webhook Basic Auth Passwort",
-      "webhookSignatureKey": "Webhook Signaturschlüssel"
+      "webhookSignatureKey": "Webhook Signaturschlüssel",
+      "webhookEndpointLabel": "Webhook-Endpunkt-URL (durch den EBizCharge Support einzurichten)",
+      "webhookEndpointHelpText": "Kopieren Sie diese URL und senden Sie sie an den EBizCharge Kundensupport, damit die Webhook-Zustellung eingerichtet werden kann.",
+      "webhookEndpointCopyButton": "URL kopieren",
+      "webhookEndpointCopied": "Webhook-Endpunkt-URL kopiert.",
+      "webhookEndpointCopyError": "Die Webhook-Endpunkt-URL konnte nicht kopiert werden."
     },
     "configValidation": {
       "bannerTitle": "Folgender Fehler ist aufgetreten:",

@@ -47,6 +47,7 @@ The plugin supports hosted card and ACH checkout, saved-payment-method account m
 ### Webhook Status Updates
 
 - Receive EBizCharge webhook events at `/ebizcharge/webhook`.
+- Copy the full webhook endpoint URL from the plugin configuration for EBizCharge support setup.
 - Protect webhook requests with Basic Auth and HMAC signature validation.
 - Sync captured, voided, and refunded sale events into Shopware transaction states.
 
@@ -152,6 +153,7 @@ Configure:
 - Webhook Basic Auth username
 - Webhook Basic Auth password
 - Webhook signature key
+- Webhook endpoint URL for EBizCharge support configuration
 
 <img width="1308" height="532" alt="image" src="https://github.com/user-attachments/assets/3fe1ba0c-1047-48f0-b513-2664f0dcab09" />
 
@@ -275,6 +277,8 @@ The plugin exposes:
 ```text
 POST /ebizcharge/webhook
 ```
+
+The plugin configuration displays the full webhook endpoint URL and provides a copy action so the merchant can send the exact URL to EBizCharge support for webhook configuration.
 
 Supported webhook events:
 

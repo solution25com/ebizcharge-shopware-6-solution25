@@ -321,11 +321,12 @@ mustNotContain($root . '/src/Resources/app/administration/src', [
 ], $violations);
 
 mustContain($root . '/README.md', [
-    'Version `1.0.6`',
+    'Version `1.0.7`',
     'REST only',
     'Manual upload in Shopware Admin',
     'ebizcharge:test-connection',
     'password-only credential changes',
+    'Webhook endpoint URL for EBizCharge support configuration',
 ], $violations);
 mustNotContain($root . '/README.md', [
     'dedicated logger channel `ebizcharge_payment`',
@@ -333,6 +334,8 @@ mustNotContain($root . '/README.md', [
 ], $violations);
 
 mustContain($root . '/CHANGELOG.md', [
+    '## [1.0.7]',
+    'Added a copyable webhook endpoint URL to the plugin configuration so merchants can send the exact endpoint to EBizCharge support for webhook setup.',
     '## [1.0.6]',
     'Kept abandoned hosted checkout transactions payable from the customer order history by using Shopware\'s unconfirmed transaction state.',
     'Replaced older EBizCharge hosted webform requests when new Pay by Link or hosted checkout forms are generated.',
@@ -370,7 +373,7 @@ mustContain($root . '/tools/self-test.php', [
 ], $violations);
 
 mustContain($root . '/composer.json', [
-    '"version": "1.0.6"',
+    '"version": "1.0.7"',
     '"shopware/core": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/storefront": ">=6.7.0.0 <6.8.0.0"',
     '"shopware/administration": ">=6.7.0.0 <6.8.0.0"',

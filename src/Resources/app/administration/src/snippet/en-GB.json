@@ -39,7 +39,12 @@
       "retryCountHelpText": "Used only for network errors and provider 5xx responses. Maximum effective value is 3.",
       "webhookBasicUsername": "Webhook basic auth username",
       "webhookBasicPassword": "Webhook basic auth password",
-      "webhookSignatureKey": "Webhook signature key"
+      "webhookSignatureKey": "Webhook signature key",
+      "webhookEndpointLabel": "Webhook endpoint URL (to be configured by EBizCharge support)",
+      "webhookEndpointHelpText": "Copy this URL and send it to EBizCharge customer support when asking them to configure webhook delivery.",
+      "webhookEndpointCopyButton": "Copy URL",
+      "webhookEndpointCopied": "Webhook endpoint URL copied.",
+      "webhookEndpointCopyError": "The webhook endpoint URL could not be copied."
     },
     "configValidation": {
       "bannerTitle": "The following error occurred:",
