@@ -61,16 +61,54 @@ final class DalTransactionRecordStore implements TransactionRecordStoreInterface
         return $this->format(DalSearchResultHelper::first($this->repository->search($criteria, $context)));
     }
 
+    public function findByLookupKey(string $lookupKey, Context $context): ?array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('lookupKey', $lookupKey));
+
+        return $this->uniqueResult($criteria, $context);
+    }
+
     public function findByOrderIdentity(string $value, Context $context): ?array
     {
         $criteria = (new Criteria())
             ->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, [
                 new EqualsFilter('orderNumber', $value),
                 new EqualsFilter('orderId', $value),
-            ]))
-            ->setLimit(1);
+            ]));
 
-        return $this->format(DalSearchResultHelper::first($this->repository->search($criteria, $context)));
+        return $this->uniqueResult($criteria, $context);
+    }
+
+    public function findByPaymentInternalId(string $paymentInternalId, Context $context): ?array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('activePaymentInternalId', $paymentInternalId));
+
+        return $this->uniqueResult($criteria, $context);
+    }
+
+    public function findByProviderReference(string $providerReference, Context $context): ?array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('providerRefNum', $providerReference));
+
+        return $this->uniqueResult($criteria, $context);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function uniqueResult(Criteria $criteria, Context $context): ?array
+    {
+        $criteria->setLimit(2);
+        $result = $this->repository->search($criteria, $context);
+
+        if ($result->getEntities()->count() !== 1) {
+            return null;
+        }
+
+        return $this->format(DalSearchResultHelper::first($result));
     }
 
     private function format(mixed $entity): ?array

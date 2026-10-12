@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 namespace EbizChargeShopware\Controller\Storefront;
 
-use EbizChargeShopware\Service\Configuration\PluginConfigProvider;
+use EbizChargeShopware\Service\StateSync\TransactionStateSyncService;
+use EbizChargeShopware\Service\Webhook\WebhookPaymentVerifier;
 use EbizChargeShopware\Storage\TransactionRecordStoreInterface;
-use EbizChargeShopware\ValueObject\PluginConfig;
-use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use EbizChargeShopware\ValueObject\ProviderOperationResult;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 final class WebhookController
 {
     public function __construct(
-        private readonly PluginConfigProvider $pluginConfigProvider,
         private readonly TransactionRecordStoreInterface $transactionRecordStore,
-        private readonly OrderTransactionStateHandler $orderTransactionStateHandler,
-        private readonly LoggerInterface $logger
+        private readonly WebhookPaymentVerifier $webhookPaymentVerifier,
+        private readonly TransactionStateSyncService $transactionStateSyncService
     ) {
     }
 
@@ -34,43 +30,25 @@ final class WebhookController
     )]
     public function webhook(Request $request, Context $context): JsonResponse
     {
-        $payload = $request->getContent();
+        $payload = (string) $request->getContent();
         $data = json_decode($payload, true);
 
-        $salesChannelId = $request->attributes->get('sw-sales-channel-id');
-
-        $config = $this->pluginConfigProvider->get($salesChannelId);
-
-        if (!$data) {
+        if (!is_array($data)) {
             return new JsonResponse(['error' => 'Invalid JSON'], 400);
         }
 
-        if (!$this->matchesWebhookBasicAuth($request, $config)) {
-            return new JsonResponse(['error' => 'Invalid webhook basic auth'], 401);
-        }
-
-        if (!$this->matchesWebhookSignature($request, $payload, $config)) {
-            return new JsonResponse(['error' => 'Invalid webhook signature'], 401);
-        }
-
-        $eventType = strtolower((string) ($data['event_type'] ?? $data['eventType'] ?? ''));
-        $eventBody = is_array($data['event_body'] ?? null) ? $data['event_body'] : [];
-        $eventObject = is_array($eventBody['object'] ?? null) ? $eventBody['object'] : [];
-
-        $targetState = $this->targetStateForEvent($eventType);
-
-        if ($targetState === null) {
+        if (!$this->isSaleWebhook($data)) {
             return new JsonResponse([
                 'status' => 'ignored',
-                'eventType' => $eventType,
+                'eventType' => '',
             ]);
         }
 
-        $record = $this->findMatchingTransactionRecord($eventObject, $context);
+        $record = $this->findMatchingTransactionRecord($data, $context);
         if ($record === null) {
             return new JsonResponse([
                 'status' => 'ignored',
-                'eventType' => $eventType,
+                'eventType' => '',
             ]);
         }
 
@@ -78,21 +56,21 @@ final class WebhookController
         if (!is_string($orderTransactionId) || $orderTransactionId === '') {
             return new JsonResponse([
                 'status' => 'ignored',
+                'eventType' => '',
+            ]);
+        }
+
+        $result = $this->webhookPaymentVerifier->verifyApprovedPayment($data, $record, $context);
+        $eventType = $this->eventType($result);
+
+        if ($eventType === '') {
+            return new JsonResponse([
+                'status' => 'ignored',
                 'eventType' => $eventType,
             ]);
         }
 
-        $providerReference = $eventObject['refnum'] ?? null;
-        $providerReference = is_scalar($providerReference) ? trim((string) $providerReference) : null;
-
-        $this->transactionRecordStore->upsert($orderTransactionId, [
-            'provider_ref_num' => $providerReference,
-            'normalized_state' => $targetState,
-            'last_support_message' => sprintf('Webhook event %s synced transaction.', $eventType),
-            'last_sync_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
-        ], $context);
-
-        $this->applyWebhookState($orderTransactionId, $targetState, $context);
+        $this->transactionStateSyncService->apply($orderTransactionId, $result, $context);
 
         return new JsonResponse([
             'status' => 'ok',
@@ -100,13 +78,31 @@ final class WebhookController
         ]);
     }
 
-    private function targetStateForEvent(string $eventType): ?string
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function isSaleWebhook(array $data): bool
     {
-        return match ($eventType) {
-            'transaction.sale.captured' => OrderTransactionStates::STATE_PAID,
-            'transaction.sale.voided' => OrderTransactionStates::STATE_CANCELLED,
-            'transaction.sale.refunded' => OrderTransactionStates::STATE_REFUNDED,
-            default => null,
+        $paymentType = strtolower((string) ($this->firstString($data, ['PaymentType', 'paymentType']) ?? ''));
+        $typeId = strtolower((string) ($this->firstString($data, ['TypeId', 'typeId']) ?? ''));
+
+        if ($paymentType === 'sale' && in_array($typeId, ['webform', 'customerportal', 'recurring'], true)) {
+            return true;
+        }
+
+        return $paymentType === 'sale' && $this->firstString($data, ['PaymentInternalId', 'paymentInternalId']) !== null;
+    }
+
+    private function eventType(?ProviderOperationResult $result): string
+    {
+        if ($result?->outcome !== ProviderOperationResult::OUTCOME_APPROVED) {
+            return '';
+        }
+
+        return match ($this->verifiedPaymentMode($result)) {
+            'sale', 'capture', 'captured', 'settled', 'settlement' => 'transaction.sale.captured',
+            'authonly', 'auth', 'authorize', 'authorized', 'authorization' => 'transaction.sale.authorized',
+            default => '',
         };
     }
 
@@ -117,12 +113,38 @@ final class WebhookController
      */
     private function findMatchingTransactionRecord(array $eventObject, Context $context): ?array
     {
-        $fields = ['orderid', 'ponum', 'invoice'];
+        $lookupKey = $this->firstString($eventObject, [
+            'TransactionLookupKey',
+            'transactionLookupKey',
+            'lookupKey',
+        ]);
+        if ($lookupKey !== null && ($record = $this->transactionRecordStore->findByLookupKey($lookupKey, $context))) {
+            return $record;
+        }
+
+        $paymentInternalId = $this->firstString($eventObject, [
+            'PaymentInternalId',
+            'paymentInternalId',
+            'ScheduledPaymentInternalId',
+            'scheduledPaymentInternalId',
+        ]);
+        if ($paymentInternalId !== null && ($record = $this->transactionRecordStore->findByPaymentInternalId($paymentInternalId, $context))) {
+            return $record;
+        }
+
+        $fields = [
+            'orderid',
+            'OrderId',
+            'ponum',
+            'PoNum',
+            'invoice',
+            'InvoiceNumber',
+        ];
 
         foreach ($fields as $field) {
-            $identifier = trim((string) ($eventObject[$field] ?? ''));
+            $identifier = $this->string($eventObject, $field);
 
-            if ($identifier === '') {
+            if ($identifier === null) {
                 continue;
             }
 
@@ -134,50 +156,46 @@ final class WebhookController
         return null;
     }
 
-    private function applyWebhookState(string $orderTransactionId, string $targetState, Context $context): string
+    private function verifiedPaymentMode(ProviderOperationResult $result): string
     {
-        try {
-            match ($targetState) {
-                OrderTransactionStates::STATE_PAID => $this->orderTransactionStateHandler->paid($orderTransactionId, $context),
-                OrderTransactionStates::STATE_CANCELLED => $this->orderTransactionStateHandler->cancel($orderTransactionId, $context),
-                OrderTransactionStates::STATE_REFUNDED => $this->orderTransactionStateHandler->refund($orderTransactionId, $context),
-                default => null,
-            };
-        } catch (IllegalTransitionException $exception) {
-            $this->logger->warning('Webhook transaction state transition was rejected by Shopware.', [
-                'orderTransactionId' => $orderTransactionId,
-                'targetState' => $targetState,
-                'message' => $exception->getMessage(),
-            ]);
-        }
-
-        return $targetState;
+        return strtolower((string) preg_replace(
+            '/[^a-z0-9]+/',
+            '',
+            $result->providerPaymentType ?? $result->operationMode
+        ));
     }
 
-    private function matchesWebhookSignature(Request $request, string $payload, PluginConfig $config): bool
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $fields
+     */
+    private function firstString(array $data, array $fields): ?string
     {
-        $signatureHeader = $request->headers->get('X-Signature');
-        $secret = $config->webhookSignatureKey();
-
-        if (!is_string($signatureHeader) || trim($signatureHeader) === '' || trim($secret) === '') {
-            return false;
+        foreach ($fields as $field) {
+            $value = $this->string($data, $field);
+            if ($value !== null) {
+                return $value;
+            }
         }
 
-        return hash_equals(hash_hmac('sha256', $payload, $secret), $signatureHeader);
+        return null;
     }
 
-    private function matchesWebhookBasicAuth(Request $request, PluginConfig $config): bool
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function string(array $data, string $field): ?string
     {
-        $expectedUsername = trim($config->webhookBasicUsername());
-        $expectedPassword = trim($config->webhookBasicPassword());
+        foreach ($data as $key => $value) {
+            if (strtolower((string) $key) !== strtolower($field) || !is_scalar($value)) {
+                continue;
+            }
 
-        if ($expectedUsername === '' || $expectedPassword === '') {
-            return false;
+            $value = trim((string) $value);
+
+            return $value !== '' ? $value : null;
         }
 
-        $actualUsername = (string) $request->server->get('PHP_AUTH_USER', $request->getUser() ?? '');
-        $actualPassword = (string) $request->server->get('PHP_AUTH_PW', $request->getPassword() ?? '');
-
-        return hash_equals($expectedUsername, $actualUsername) && hash_equals($expectedPassword, $actualPassword);
+        return null;
     }
 }

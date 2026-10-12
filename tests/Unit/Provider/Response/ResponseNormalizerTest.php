@@ -62,6 +62,7 @@ final class ResponseNormalizerTest extends TestCase
                         'AuthCode' => '505998',
                         'PaymentType' => 'AuthOnly',
                         'PaymentMethod' => 'Visa',
+                        'Status' => 'Approved',
                         'DatePaid' => '2024-05-04T00:36:48',
                         'Amount' => 50.0,
                         'Currency' => 'USD',
@@ -231,6 +232,56 @@ final class ResponseNormalizerTest extends TestCase
         self::assertSame('approved', $result->outcome);
     }
 
+    #[DataProvider('pendingProviderStatusProvider')]
+    public function testPendingProviderStatusesStayPending(string $status): void
+    {
+        $normalizer = new ResponseNormalizer();
+        $orderData = $this->orderData();
+
+        $result = $normalizer->normalizeVerifiedPayment([
+            'searchEbizWebFormReceivedPaymentsResponse' => [
+                'searchEbizWebFormReceivedPaymentsResult' => [
+                    [
+                        'RefNum' => '3177716774',
+                        'PaymentType' => 'Sale',
+                        'PaymentMethod' => 'Visa',
+                        'Status' => $status,
+                        'Amount' => 50.0,
+                        'Currency' => 'USD',
+                        'TransactionLookupKey' => 'transaction-id',
+                    ],
+                ],
+            ],
+        ], 'Sale', $orderData);
+
+        self::assertSame('pending', $result->outcome);
+    }
+
+    public function testEmptyStatusWithAuthCodeStaysPending(): void
+    {
+        $normalizer = new ResponseNormalizer();
+        $orderData = $this->orderData();
+
+        $result = $normalizer->normalizeVerifiedPayment([
+            'searchEbizWebFormReceivedPaymentsResponse' => [
+                'searchEbizWebFormReceivedPaymentsResult' => [
+                    [
+                        'RefNum' => '3177716774',
+                        'AuthCode' => '505998',
+                        'PaymentType' => 'Sale',
+                        'PaymentMethod' => 'Visa',
+                        'Status' => '',
+                        'Amount' => 50.0,
+                        'Currency' => 'USD',
+                        'TransactionLookupKey' => 'transaction-id',
+                    ],
+                ],
+            ],
+        ], 'Sale', $orderData);
+
+        self::assertSame('pending', $result->outcome);
+    }
+
     public static function unauthorizedStatusProvider(): array
     {
         return [
@@ -248,5 +299,39 @@ final class ResponseNormalizerTest extends TestCase
             ['auth_only'],
             ['auth-only'],
         ];
+    }
+
+    public static function pendingProviderStatusProvider(): array
+    {
+        return [
+            ['Pending Settlement'],
+            ['Pending Capture'],
+        ];
+    }
+
+    private function orderData(): CheckoutOrderData
+    {
+        return new CheckoutOrderData(
+            'order-id',
+            'transaction-id',
+            '10001',
+            'sales-channel-id',
+            false,
+            'customer-id',
+            '1000',
+            'buyer@example.com',
+            'Jane Doe',
+            new \DateTimeImmutable('2026-04-10 00:00:00'),
+            'USD',
+            50.0,
+            50.0,
+            5.0,
+            0.0,
+            0.0,
+            0.0,
+            new AddressData('Jane', 'Doe', 'ACME', 'Main St 1', null, 'Irvine', 'CA', '92618', 'US'),
+            null,
+            [new LineItemData('SKU1', 'Product', 'Product', 0.0, 'EA', 50.0, 1.0, true, 5.0)]
+        );
     }
 }

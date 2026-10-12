@@ -242,6 +242,20 @@ final class ResponseNormalizer
             if ($lookupKey !== null && !hash_equals($expectedLookupKey, $lookupKey)) {
                 throw new VerificationException('The provider verification response did not match the expected embedded payment.');
             }
+
+            if ($lookupKey === null) {
+                if ($orderId === null && $invoiceNumber === null) {
+                    throw new VerificationException('The provider verification response did not contain a Shopware order correlation key.');
+                }
+
+                if ($orderId !== null && !$this->matchesOrderIdentity($orderData, $orderId)) {
+                    throw new VerificationException('The provider verification orderId did not match the Shopware order.');
+                }
+
+                if ($invoiceNumber !== null && !$this->matchesOrderIdentity($orderData, $invoiceNumber)) {
+                    throw new VerificationException('The provider verification invoiceNumber did not match the Shopware order.');
+                }
+            }
         } else {
             if ($lookupKey !== null && !hash_equals($orderData->orderTransactionId, $lookupKey)) {
                 throw new VerificationException('The provider verification response did not match the Shopware order transaction.');
@@ -305,6 +319,10 @@ final class ResponseNormalizer
                 return ProviderOperationResult::OUTCOME_CANCELLED;
             }
 
+            if (str_contains($status, 'pending') || str_contains($status, 'process') || str_contains($status, 'open')) {
+                return ProviderOperationResult::OUTCOME_PENDING;
+            }
+
             if (
                 str_contains($status, 'approv')
                 || str_contains($status, 'success')
@@ -316,17 +334,6 @@ final class ResponseNormalizer
             ) {
                 return ProviderOperationResult::OUTCOME_APPROVED;
             }
-
-            if (str_contains($status, 'pending') || str_contains($status, 'process') || str_contains($status, 'open')) {
-                return ProviderOperationResult::OUTCOME_PENDING;
-            }
-        }
-
-        if (
-            $this->stringOrNull($node['DatePaid'] ?? $node['datePaid'] ?? null) !== null
-            || $this->stringOrNull($node['AuthCode'] ?? $node['authCode'] ?? null) !== null
-        ) {
-            return ProviderOperationResult::OUTCOME_APPROVED;
         }
 
         return ProviderOperationResult::OUTCOME_PENDING;

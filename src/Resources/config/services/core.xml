@@ -118,6 +118,17 @@
             <argument type="service" id="EbizChargeShopware.logger"/>
         </service>
 
+        <service id="EbizChargeShopware\Service\Webhook\WebhookPaymentVerifier">
+            <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>
+            <argument type="service" id="EbizChargeShopware\Service\Configuration\PluginConfigProvider"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Client\ProviderClientInterface"/>
+            <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\GetTransactionDetailsRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Request\SearchReceivedPaymentsRequestBuilder"/>
+            <argument type="service" id="EbizChargeShopware\Provider\Response\ResponseNormalizer"/>
+            <argument type="service" id="EbizChargeShopware.logger"/>
+        </service>
+
         <service id="EbizChargeShopware\Service\EbizChargeApiClient">
             <argument type="service" id="EbizChargeShopware\Storage\TransactionRecordStoreInterface"/>
             <argument type="service" id="EbizChargeShopware\Service\Checkout\OrderTransactionLoader"/>

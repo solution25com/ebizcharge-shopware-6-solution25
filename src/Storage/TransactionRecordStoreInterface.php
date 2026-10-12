@@ -21,5 +21,20 @@ interface TransactionRecordStoreInterface
     /**
      * @return array<string, mixed>|null
      */
+    public function findByLookupKey(string $lookupKey, Context $context): ?array;
+
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findByOrderIdentity(string $value, Context $context): ?array;
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findByPaymentInternalId(string $paymentInternalId, Context $context): ?array;
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findByProviderReference(string $providerReference, Context $context): ?array;
 }

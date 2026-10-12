@@ -27,6 +27,21 @@ final class TransactionStateResolverTest extends TestCase
         self::assertSame(OrderTransactionStates::STATE_AUTHORIZED, $resolver->resolve($result));
     }
 
+    public function testVerifiedProviderAuthOnlyTypeOverridesSaleOperationMode(): void
+    {
+        $resolver = new TransactionStateResolver();
+        $result = ProviderOperationResult::approved(
+            'Sale',
+            'ref-1',
+            'auth-1',
+            'ok',
+            'Visa',
+            'AuthOnly'
+        );
+
+        self::assertSame(OrderTransactionStates::STATE_AUTHORIZED, $resolver->resolve($result));
+    }
+
     public function testDeclineMapsToFailed(): void
     {
         $resolver = new TransactionStateResolver();

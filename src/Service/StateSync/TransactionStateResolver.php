@@ -18,8 +18,14 @@ final class TransactionStateResolver
             return OrderTransactionStates::STATE_UNCONFIRMED;
         }
 
+        $paymentMode = strtoupper((string) preg_replace(
+            '/[^a-z0-9]+/i',
+            '',
+            $result->providerPaymentType ?? $result->operationMode
+        ));
+
         return match ($result->outcome) {
-            ProviderOperationResult::OUTCOME_APPROVED => strtoupper($result->operationMode) === 'AUTHONLY'
+            ProviderOperationResult::OUTCOME_APPROVED => in_array($paymentMode, ['AUTHONLY', 'AUTH', 'AUTHORIZE', 'AUTHORIZED', 'AUTHORIZATION'], true)
                 ? OrderTransactionStates::STATE_AUTHORIZED
                 : OrderTransactionStates::STATE_PAID,
             ProviderOperationResult::OUTCOME_DECLINED => OrderTransactionStates::STATE_FAILED,
