@@ -1,14 +1,22 @@
 # Changelog
 
+## [1.0.9] - 2026-10-12
+
+### Fixed
+
+- Improved webhook payment updates for more reliable order status changes.
+
 ## [1.0.8] - 2026-09-30
 
 ### Added
 
 - Added a copyable webhook endpoint URL to the plugin configuration so merchants can send the exact endpoint to EBizCharge support for webhook setup.
 
-
 ## [1.0.7] - 2026-09-29
-- Updated storefront payment method management UI
+
+### Changed
+
+- Updated storefront payment method management UI.
 
 ## [1.0.6] - 2026-09-10
 

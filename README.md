@@ -2,6 +2,7 @@
 
 # EBizCharge Payment for Shopware 6.7
 
+Version `1.0.9`
 
 ## Introduction
 
@@ -48,15 +49,14 @@ The plugin supports hosted card and ACH checkout, saved-payment-method account m
 
 - Receive EBizCharge webhook events at `/ebizcharge/webhook`.
 - Copy the full webhook endpoint URL from the plugin configuration for EBizCharge support setup.
-- Protect webhook requests with Basic Auth and HMAC signature validation.
-- Sync captured, voided, and refunded sale events into Shopware transaction states.
+- Verify webhook payment updates against EBizCharge before changing Shopware transaction states.
 
 ### Flexible Configuration
 
 - Choose between sandbox and production EBizCharge environments.
 - Configure REST base URLs and credentials per environment.
 - Select `Sale` or `AuthOnly` processing.
-- Configure transaction description, AVS behavior, verification lookback, timeout, retries, and webhook security.
+- Configure transaction description, AVS behavior, verification lookback, timeout, retries, and webhook setup fields.
 
 ### Shopware 6.7 Compatibility
 
@@ -154,6 +154,8 @@ Configure:
 - Webhook Basic Auth password
 - Webhook signature key
 - Webhook endpoint URL for EBizCharge support configuration
+
+Webhook payment updates are confirmed server-side with EBizCharge before the plugin changes a Shopware transaction state. The Basic Auth and signature fields are kept for webhook setups that support those credentials.
 
 <img width="1308" height="532" alt="image" src="https://github.com/user-attachments/assets/3fe1ba0c-1047-48f0-b513-2664f0dcab09" />
 
@@ -282,11 +284,11 @@ The plugin configuration displays the full webhook endpoint URL and provides a c
 
 Supported webhook events:
 
-- `transaction.sale.captured`
-- `transaction.sale.voided`
-- `transaction.sale.refunded`
+- approved sale payments
+- authorization-only payments
+- pending or declined sale updates
 
-Webhook requests are validated with configured Basic Auth credentials and an HMAC signature key.
+Webhook payloads are treated as payment update signals. The plugin verifies the matching EBizCharge payment before applying a Shopware transaction state.
 
 ---
 
@@ -310,7 +312,7 @@ Stored metadata includes:
 - amount and currency
 - last sync timestamp
 
-This data is used for finalization, webhook processing, and provider capture/void/refund calls.
+This data is used for finalization, webhook processing, and provider capture, void, or refund calls.
 
 ---
 
